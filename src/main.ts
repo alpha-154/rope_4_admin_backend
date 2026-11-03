@@ -3,8 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
+import express from 'express';
 import helmet from 'helmet';
 import * as hpp from 'hpp';
+import * as path from 'path';
+import * as fs from 'fs';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
@@ -15,8 +18,21 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
+  // Serve uploaded files statically
+  const uploadDir = path.resolve(
+    configService.get<string>(EnvironmentKey.UPLOAD_DIR) || './uploads',
+  );
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadDir));
+
   // Security middlewares
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
   app.use(hpp());
   app.use(cookieParser());
 
@@ -70,6 +86,7 @@ async function bootstrap() {
   logger.log(`🚀 Rope4 Backend API running on port: ${port}`);
   logger.log(`📚 Swagger Docs available at: http://localhost:${port}/api/docs`);
   logger.log(`🩺 Health check at: http://localhost:${port}/api/health`);
+  logger.log(`📁 Static uploads served at: http://localhost:${port}/uploads`);
   logger.log(`===============================================`);
 }
 

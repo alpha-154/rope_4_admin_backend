@@ -18,10 +18,13 @@ const logger = new Logger('Database');
           configService.get<string>(EnvironmentKey.MONGODB_URI) ||
           'mongodb://localhost:27017/rope4';
 
-        const connection = mongoose.createConnection();
+        const connection = mongoose.createConnection(uri, {
+          serverSelectionTimeoutMS: 10000,
+          autoIndex: true,
+        });
 
         connection.on('connected', () => {
-          logger.log(`MongoDB connected successfully at ${uri}`);
+          logger.log(`MongoDB connected successfully to Atlas cluster`);
         });
 
         connection.on('disconnected', () => {
@@ -29,18 +32,7 @@ const logger = new Logger('Database');
         });
 
         connection.on('error', (err) => {
-          logger.error(`MongoDB error: ${err.message}`);
-        });
-
-        // Attempt connection with fallback so server boots even if DB is offline initially
-        connection.openUri(uri, {
-          serverSelectionTimeoutMS: 2000,
-          connectTimeoutMS: 2000,
-          autoIndex: true,
-        }).catch((err) => {
-          logger.warn(
-            `MongoDB initial connection failed (${err.message}). Server started in resilient mode; Mongoose will reconnect when DB is up.`,
-          );
+          logger.error(`MongoDB connection error: ${err.message}`);
         });
 
         return connection;
@@ -55,4 +47,3 @@ export class DatabaseModule implements OnApplicationShutdown {
     logger.log('Closed all MongoDB connections');
   }
 }
-
