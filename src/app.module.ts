@@ -7,8 +7,11 @@ import { DatabaseModule } from './modules/database/database.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { HealthModule } from './modules/health/health.module';
 import { HighlightModule } from './modules/highlight/highlight.module';
+import { NewsModule } from './modules/news/news.module';
 import { OrganizationModule } from './modules/organization/organization.module';
+import { PopoverModule } from './modules/popover/popover.module';
 import { ProgramModule } from './modules/program/program.module';
+import { ReviewModule } from './modules/review/review.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UserModule } from './modules/user/user.module';
 
@@ -33,6 +36,9 @@ import { UserModule } from './modules/user/user.module';
     HighlightModule,
     FaqModule,
     ProgramModule,
+    ReviewModule,
+    NewsModule,
+    PopoverModule,
   ],
 })
 export class AppModule {}
