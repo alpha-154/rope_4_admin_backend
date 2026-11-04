@@ -11,3 +11,4 @@ export interface IStorageService {
   delete(filename: string): Promise<void>;
   getUrl(filename: string): string;
 }
+

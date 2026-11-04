@@ -52,3 +52,4 @@ export class CreateHighlightDto {
   @IsBoolean()
   isPublic?: boolean;
 }
+

@@ -112,3 +112,4 @@ export class HighlightService {
       .replace(/--+/g, '-');
   }
 }
+

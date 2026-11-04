@@ -83,3 +83,4 @@ export const FaqSchema = SchemaFactory.createForClass(Faq);
 
 FaqSchema.index({ organizationId: 1, slug: 1 }, { unique: true });
 FaqSchema.index({ organizationId: 1, index: 1 });
+

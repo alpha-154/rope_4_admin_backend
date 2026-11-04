@@ -13,3 +13,4 @@ export interface IQueryResult<T> {
   data: Partial<T>[];
   total: number;
 }
+

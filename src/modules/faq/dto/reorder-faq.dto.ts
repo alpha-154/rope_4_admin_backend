@@ -12,3 +12,4 @@ export class ReorderFaqDto {
   @IsString()
   nextId?: string;
 }
+

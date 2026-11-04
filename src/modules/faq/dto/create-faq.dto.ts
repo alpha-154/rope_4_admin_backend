@@ -32,3 +32,4 @@ export class CreateFaqDto {
   @IsBoolean()
   isActive?: boolean;
 }
+

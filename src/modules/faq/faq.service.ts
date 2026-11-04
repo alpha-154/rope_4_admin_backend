@@ -196,3 +196,4 @@ export class FaqService {
     return `${base}-${max + 1}`;
   }
 }
+

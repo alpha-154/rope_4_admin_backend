@@ -114,3 +114,4 @@ export const HighlightSchema = SchemaFactory.createForClass(Highlight);
 
 HighlightSchema.index({ organizationId: 1, slug: 1 }, { unique: true });
 HighlightSchema.index({ organizationId: 1, sectionKey: 1 });
+

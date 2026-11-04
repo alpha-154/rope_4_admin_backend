@@ -8,6 +8,7 @@ import { FaqModule } from './modules/faq/faq.module';
 import { HealthModule } from './modules/health/health.module';
 import { HighlightModule } from './modules/highlight/highlight.module';
 import { OrganizationModule } from './modules/organization/organization.module';
+import { ProgramModule } from './modules/program/program.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { UserModule } from './modules/user/user.module';
 
@@ -31,6 +32,7 @@ import { UserModule } from './modules/user/user.module';
     StorageModule,
     HighlightModule,
     FaqModule,
+    ProgramModule,
   ],
 })
 export class AppModule {}
