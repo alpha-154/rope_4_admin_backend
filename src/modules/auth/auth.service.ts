@@ -2,12 +2,12 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import {
   TokenPayload,
   UserRole,
@@ -87,7 +87,10 @@ export class AuthService {
     const accessToken = this.generateToken(tokenPayload, 'access');
     const refreshToken = this.generateToken(tokenPayload, 'refresh');
 
-    await this.userService.updateRefreshToken(user._id.toString(), refreshToken);
+    await this.userService.updateRefreshToken(
+      user._id.toString(),
+      refreshToken,
+    );
 
     return {
       user: {
@@ -118,7 +121,9 @@ export class AuthService {
     }
 
     if (!user.isActive || user.isDeleted) {
-      throw new UnauthorizedException('Account is inactive or has been suspended');
+      throw new UnauthorizedException(
+        'Account is inactive or has been suspended',
+      );
     }
 
     const isMatch = await user.comparePassword(dto.password);
@@ -143,7 +148,10 @@ export class AuthService {
     const accessToken = this.generateToken(tokenPayload, 'access');
     const refreshToken = this.generateToken(tokenPayload, 'refresh');
 
-    await this.userService.updateRefreshToken(user._id.toString(), refreshToken);
+    await this.userService.updateRefreshToken(
+      user._id.toString(),
+      refreshToken,
+    );
 
     return {
       user: {
@@ -184,13 +192,20 @@ export class AuthService {
       }
 
       if (!user.refreshTokenHash) {
-        throw new UnauthorizedException('Session expired. Please log in again.');
+        throw new UnauthorizedException(
+          'Session expired. Please log in again.',
+        );
       }
 
-      const isMatch = await bcrypt.compare(
-        dto.refreshToken,
-        user.refreshTokenHash,
-      );
+      const hashedInput = crypto
+        .createHash('sha256')
+        .update(dto.refreshToken)
+        .digest('hex');
+      let isMatch = await bcrypt.compare(hashedInput, user.refreshTokenHash);
+      if (!isMatch) {
+        // Fallback for tokens issued prior to pre-hashing
+        isMatch = await bcrypt.compare(dto.refreshToken, user.refreshTokenHash);
+      }
       if (!isMatch) {
         throw new UnauthorizedException('Invalid refresh token');
       }
@@ -277,4 +292,3 @@ export class AuthService {
     };
   }
 }
-

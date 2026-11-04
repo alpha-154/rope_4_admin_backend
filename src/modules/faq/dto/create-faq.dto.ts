@@ -16,7 +16,10 @@ export class CreateFaqDto {
   @IsString()
   category: string;
 
-  @ApiPropertyOptional({ example: 'beginners-guide', description: 'URL-friendly slug' })
+  @ApiPropertyOptional({
+    example: 'beginners-guide',
+    description: 'URL-friendly slug',
+  })
   @IsOptional()
   @IsString()
   slug?: string;
@@ -32,4 +35,3 @@ export class CreateFaqDto {
   @IsBoolean()
   isActive?: boolean;
 }
-

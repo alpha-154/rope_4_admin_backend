@@ -4,7 +4,6 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsMongoId,
   IsNotEmpty,
@@ -37,7 +36,10 @@ export class NewsSeo {
   @IsString()
   title?: string;
 
-  @ApiPropertyOptional({ example: 'Complete beginner preparation guide for Himalayan high-altitude summits.' })
+  @ApiPropertyOptional({
+    example:
+      'Complete beginner preparation guide for Himalayan high-altitude summits.',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
@@ -96,13 +98,18 @@ export class News {
   @IsString()
   cover?: string;
 
-  @ApiProperty({ example: 'A complete rundown of layers, mountaineering boots, and sleep systems that withstand sub-zero winds.' })
+  @ApiProperty({
+    example:
+      'A complete rundown of layers, mountaineering boots, and sleep systems that withstand sub-zero winds.',
+  })
   @Prop({ type: String, required: true, trim: true })
   @IsNotEmpty()
   @IsString()
   excerpt: string;
 
-  @ApiPropertyOptional({ example: '<p>Comprehensive article body in HTML...</p>' })
+  @ApiPropertyOptional({
+    example: '<p>Comprehensive article body in HTML...</p>',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()

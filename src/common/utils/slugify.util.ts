@@ -7,4 +7,3 @@ export function createSlug(text: string): string {
     trim: true,
   });
 }
-

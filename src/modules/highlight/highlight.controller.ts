@@ -17,9 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { Authorization } from '../../common/decorators/authorization.decorator';
 import { GetOrgId } from '../../common/decorators/get-organizationId.decorator';
-import {
-  QueryFeatureMultiple,
-} from '../../common/decorators/query-features.decorator';
+import { QueryFeatureMultiple } from '../../common/decorators/query-features.decorator';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { IApiResponse } from '../../common/interfaces/api-response.interface';
 import { IQueryFeatures } from '../../common/interfaces/query-feature.interface';
@@ -30,7 +28,7 @@ import { Highlight } from './entities/highlight.entity';
 import { HighlightService } from './highlight.service';
 
 @ApiTags('Highlights')
-@Controller('highlights')
+@Controller()
 export class HighlightController {
   constructor(private readonly highlightService: HighlightService) {}
 
@@ -41,7 +39,7 @@ export class HighlightController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Create highlight section (Admin)' })
   @ApiResponse({ status: 201, type: Highlight })
-  @Post()
+  @Post('highlights')
   async create(
     @GetOrgId() orgId: string,
     @Body() createDto: CreateHighlightDto,
@@ -59,7 +57,7 @@ export class HighlightController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all highlight sections (Admin)' })
   @ApiResponse({ status: 200, type: [Highlight] })
-  @Get('admin')
+  @Get('highlights/admin')
   async findAll(
     @GetOrgId() orgId: string,
     @QueryFeatureMultiple() query: IQueryFeatures,
@@ -80,9 +78,11 @@ export class HighlightController {
   @ApiBearerAuth()
   @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   @UseGuards(AuthGuard)
-  @ApiOperation({ summary: 'Get single highlight section by ID or slug (Admin)' })
+  @ApiOperation({
+    summary: 'Get single highlight section by ID or slug (Admin)',
+  })
   @ApiResponse({ status: 200, type: Highlight })
-  @Get('admin/:id')
+  @Get('highlights/admin/:id')
   async findOne(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -100,7 +100,7 @@ export class HighlightController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Update highlight section (Admin)' })
   @ApiResponse({ status: 200, type: Highlight })
-  @Patch(':id')
+  @Patch('highlights/:id')
   async update(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -119,7 +119,7 @@ export class HighlightController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete highlight section (Admin)' })
   @ApiResponse({ status: 200 })
-  @Delete(':id')
+  @Delete('highlights/:id')
   async remove(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -136,12 +136,17 @@ export class HighlightController {
 
   @ApiOperation({ summary: 'Get public highlight by key/slug (Website)' })
   @ApiResponse({ status: 200, type: Highlight })
-  @Get('public/:sectionKey')
+  @Get(['public/highlights/:sectionKey', 'highlights/public/:sectionKey'])
   async getPublicHighlight(
     @Param('sectionKey') sectionKey: string,
-    @Query('organizationId') organizationId?: string,
+    @GetOrgId() orgId?: string,
+    @Query('organizationId') queryOrgId?: string,
   ): Promise<IApiResponse<Highlight>> {
-    const data = await this.highlightService.findPublic(sectionKey, organizationId);
+    const targetOrgId = orgId || queryOrgId;
+    const data = await this.highlightService.findPublic(
+      sectionKey,
+      targetOrgId,
+    );
     return {
       success: true,
       message: 'Highlight retrieved successfully',

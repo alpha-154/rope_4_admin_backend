@@ -33,7 +33,9 @@ export class FaqService {
       index = generateKeyBetween(null, null);
     }
 
-    const baseSlug = this.slugify(createFaqDto.slug || createFaqDto.category || 'faq');
+    const baseSlug = this.slugify(
+      createFaqDto.slug || createFaqDto.category || 'faq',
+    );
     const slug = await this.generateUniqueSlug(baseSlug, orgObjId);
 
     const created = await this.faqModel.create({
@@ -122,14 +124,20 @@ export class FaqService {
 
     if (prevId) {
       const prev = await this.faqModel
-        .findOne({ _id: new Types.ObjectId(prevId), organizationId: orgObjId }, { index: 1 })
+        .findOne(
+          { _id: new Types.ObjectId(prevId), organizationId: orgObjId },
+          { index: 1 },
+        )
         .lean();
       prevIndex = (prev as any)?.index ?? null;
     }
 
     if (nextId) {
       const next = await this.faqModel
-        .findOne({ _id: new Types.ObjectId(nextId), organizationId: orgObjId }, { index: 1 })
+        .findOne(
+          { _id: new Types.ObjectId(nextId), organizationId: orgObjId },
+          { index: 1 },
+        )
         .lean();
       nextIndex = (next as any)?.index ?? null;
     }
@@ -170,7 +178,10 @@ export class FaqService {
       .replace(/--+/g, '-');
   }
 
-  private async generateUniqueSlug(base: string, organizationId: Types.ObjectId): Promise<string> {
+  private async generateUniqueSlug(
+    base: string,
+    organizationId: Types.ObjectId,
+  ): Promise<string> {
     const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const existing = await this.faqModel
       .find(
@@ -196,4 +207,3 @@ export class FaqService {
     return `${base}-${max + 1}`;
   }
 }
-

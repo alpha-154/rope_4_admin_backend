@@ -108,4 +108,3 @@ export const QueryFeatureSingle = createParamDecorator(
   (_data: unknown, context: ExecutionContext) =>
     getQueryFeatureContext(context, 'single'),
 );
-

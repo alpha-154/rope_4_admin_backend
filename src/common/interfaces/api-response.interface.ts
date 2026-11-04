@@ -12,4 +12,3 @@ export interface IApiResponse<T = undefined> {
   };
   data?: T | null;
 }
-

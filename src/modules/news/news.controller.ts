@@ -138,8 +138,9 @@ export class NewsController {
   @Get('public/news')
   async getPublicNews(
     @Query() queryDto: QueryPublicNewsDto,
+    @GetOrgId({ required: false }) orgId?: string,
   ): Promise<IApiResponse<News[]>> {
-    const result = await this.newsService.findPublicNews(queryDto);
+    const result = await this.newsService.findPublicNews(queryDto, orgId);
     return {
       success: true,
       message: 'News articles retrieved successfully',
@@ -157,8 +158,9 @@ export class NewsController {
   @Get('public/news/:slug')
   async getPublicNewsBySlug(
     @Param('slug') slug: string,
+    @GetOrgId({ required: false }) orgId?: string,
   ): Promise<IApiResponse<News>> {
-    const data = await this.newsService.findPublicNewsBySlug(slug);
+    const data = await this.newsService.findPublicNewsBySlug(slug, orgId);
     return {
       success: true,
       message: 'News article retrieved successfully',

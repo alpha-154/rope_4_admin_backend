@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Document, HydratedDocument } from 'mongoose';
 
 export type OrganizationDocument = HydratedDocument<Organization>;
@@ -63,7 +63,10 @@ export const OrgSettingsSchema = SchemaFactory.createForClass(OrgSettings);
   toObject: { virtuals: true },
 })
 export class Organization extends Document {
-  @ApiProperty({ description: 'Organization name', example: 'Rope4 Outdoor Education' })
+  @ApiProperty({
+    description: 'Organization name',
+    example: 'Rope4 Outdoor Education',
+  })
   @Prop({ type: String, required: true, trim: true, unique: true })
   @IsString()
   @IsNotEmpty()
@@ -75,24 +78,36 @@ export class Organization extends Document {
   @IsNotEmpty()
   slug: string;
 
-  @ApiPropertyOptional({ description: 'Logo URL', example: 'https://rope4.org/logo.png' })
+  @ApiPropertyOptional({
+    description: 'Logo URL',
+    example: 'https://rope4.org/logo.png',
+  })
   @Prop({ type: String, default: null })
   @IsOptional()
   @IsString()
   logo?: string;
 
-  @ApiProperty({ description: 'Primary contact email', example: 'contact@rope4.org' })
+  @ApiProperty({
+    description: 'Primary contact email',
+    example: 'contact@rope4.org',
+  })
   @Prop({ type: String, required: true, trim: true, lowercase: true })
   @IsEmail()
   contactEmail: string;
 
-  @ApiPropertyOptional({ description: 'Primary contact phone', example: '+880 1700-000000' })
+  @ApiPropertyOptional({
+    description: 'Primary contact phone',
+    example: '+880 1700-000000',
+  })
   @Prop({ type: String, default: null })
   @IsOptional()
   @IsString()
   contactPhone?: string;
 
-  @ApiPropertyOptional({ description: 'Physical address', example: 'Dhaka, Bangladesh' })
+  @ApiPropertyOptional({
+    description: 'Physical address',
+    example: 'Dhaka, Bangladesh',
+  })
   @Prop({ type: String, default: null })
   @IsOptional()
   @IsString()
@@ -103,8 +118,18 @@ export class Organization extends Document {
   @IsOptional()
   socialLinks?: SocialLinks;
 
-  @ApiPropertyOptional({ description: 'Organization configuration', type: OrgSettings })
-  @Prop({ type: OrgSettingsSchema, default: () => ({ currency: 'BDT', timezone: 'Asia/Dhaka', defaultTaxPercent: 0 }) })
+  @ApiPropertyOptional({
+    description: 'Organization configuration',
+    type: OrgSettings,
+  })
+  @Prop({
+    type: OrgSettingsSchema,
+    default: () => ({
+      currency: 'BDT',
+      timezone: 'Asia/Dhaka',
+      defaultTaxPercent: 0,
+    }),
+  })
   @IsOptional()
   settings?: OrgSettings;
 
@@ -118,4 +143,3 @@ export class Organization extends Document {
 }
 
 export const OrganizationSchema = SchemaFactory.createForClass(Organization);
-

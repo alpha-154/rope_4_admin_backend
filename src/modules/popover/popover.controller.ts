@@ -137,8 +137,14 @@ export class PopoverController {
   @Get('public/popovers')
   async getActivePopovers(
     @Query('page') page?: string,
+    @GetOrgId({ required: false }) orgId?: string,
+    @Query('organizationId') queryOrgId?: string,
   ): Promise<IApiResponse<Popover[]>> {
-    const data = await this.popoverService.findActivePopovers(page);
+    const targetOrgId = orgId || queryOrgId;
+    const data = await this.popoverService.findActivePopovers(
+      page,
+      targetOrgId,
+    );
     return {
       success: true,
       message: 'Active popovers retrieved successfully',

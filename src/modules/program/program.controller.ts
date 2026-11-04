@@ -133,13 +133,19 @@ export class ProgramController {
 
   // --- PUBLIC ENDPOINTS (WEBSITE) ---
 
-  @ApiOperation({ summary: 'Get published programs with filter chips and search (Website)' })
+  @ApiOperation({
+    summary: 'Get published programs with filter chips and search (Website)',
+  })
   @ApiResponse({ status: 200, type: [Program] })
   @Get('public/programs')
   async getPublicPrograms(
     @Query() queryDto: QueryPublicProgramsDto,
+    @GetOrgId({ required: false }) orgId?: string,
   ): Promise<IApiResponse<Program[]>> {
-    const result = await this.programService.findPublicPrograms(queryDto);
+    const result = await this.programService.findPublicPrograms(
+      queryDto,
+      orgId,
+    );
     return {
       success: true,
       message: 'Public programs retrieved successfully',
@@ -157,8 +163,9 @@ export class ProgramController {
   @Get('public/programs/:slug')
   async getPublicProgramBySlug(
     @Param('slug') slug: string,
+    @GetOrgId({ required: false }) orgId?: string,
   ): Promise<IApiResponse<Program>> {
-    const data = await this.programService.findPublicProgramBySlug(slug);
+    const data = await this.programService.findPublicProgramBySlug(slug, orgId);
     return {
       success: true,
       message: 'Program detail retrieved successfully',
@@ -166,4 +173,3 @@ export class ProgramController {
     };
   }
 }
-

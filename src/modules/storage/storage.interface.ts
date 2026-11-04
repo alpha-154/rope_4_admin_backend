@@ -7,8 +7,10 @@ export interface UploadedFileResponse {
 }
 
 export interface IStorageService {
-  upload(file: Express.Multer.File, folder?: string): Promise<UploadedFileResponse>;
+  upload(
+    file: Express.Multer.File,
+    folder?: string,
+  ): Promise<UploadedFileResponse>;
   delete(filename: string): Promise<void>;
   getUrl(filename: string): string;
 }
-

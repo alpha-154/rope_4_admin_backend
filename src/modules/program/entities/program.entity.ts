@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -43,7 +44,10 @@ export class ProgramPrice {
   @IsString()
   currency: string;
 
-  @ApiPropertyOptional({ example: '+ 5% GST', description: 'Tax or per-person note' })
+  @ApiPropertyOptional({
+    example: '+ 5% GST',
+    description: 'Tax or per-person note',
+  })
   @Prop({ type: String, default: 'per person' })
   @IsOptional()
   @IsString()
@@ -59,13 +63,19 @@ export class ItineraryDay {
   @IsNumber()
   day: number;
 
-  @ApiProperty({ example: 'Drive from Dehradun to Sankri', description: 'Day title' })
+  @ApiProperty({
+    example: 'Drive from Dehradun to Sankri',
+    description: 'Day title',
+  })
   @Prop({ type: String, required: true, trim: true })
   @IsNotEmpty()
   @IsString()
   title: string;
 
-  @ApiProperty({ example: 'Drive through scenic pine forests alongside the Tons river...', description: 'Full day description' })
+  @ApiProperty({
+    example: 'Drive through scenic pine forests alongside the Tons river...',
+    description: 'Full day description',
+  })
   @Prop({ type: String, required: true })
   @IsNotEmpty()
   @IsString()
@@ -100,12 +110,18 @@ export const ItineraryDaySchema = SchemaFactory.createForClass(ItineraryDay);
 
 @Schema({ _id: false })
 export class ProgramDeparture {
-  @ApiProperty({ example: '2026-12-10T00:00:00.000Z', description: 'Trip start date' })
+  @ApiProperty({
+    example: '2026-12-10T00:00:00.000Z',
+    description: 'Trip start date',
+  })
   @Prop({ type: Date, required: true })
   @IsDateString()
   startDate: Date;
 
-  @ApiProperty({ example: '2026-12-16T00:00:00.000Z', description: 'Trip end date' })
+  @ApiProperty({
+    example: '2026-12-16T00:00:00.000Z',
+    description: 'Trip end date',
+  })
   @Prop({ type: Date, required: true })
   @IsDateString()
   endDate: Date;
@@ -120,19 +136,27 @@ export class ProgramDeparture {
   @IsNumber()
   seatsBooked: number;
 
-  @ApiPropertyOptional({ example: 42000, description: 'Special seasonal price' })
+  @ApiPropertyOptional({
+    example: 42000,
+    description: 'Special seasonal price',
+  })
   @Prop({ type: Number })
   @IsOptional()
   @IsNumber()
   priceOverride?: number;
 
   @ApiProperty({ enum: DepartureStatus, default: DepartureStatus.AVAILABLE })
-  @Prop({ type: String, enum: DepartureStatus, default: DepartureStatus.AVAILABLE })
+  @Prop({
+    type: String,
+    enum: DepartureStatus,
+    default: DepartureStatus.AVAILABLE,
+  })
   @IsEnum(DepartureStatus)
   status: DepartureStatus;
 }
 
-export const ProgramDepartureSchema = SchemaFactory.createForClass(ProgramDeparture);
+export const ProgramDepartureSchema =
+  SchemaFactory.createForClass(ProgramDeparture);
 
 @Schema({ _id: false })
 export class ProgramSeo {
@@ -142,7 +166,10 @@ export class ProgramSeo {
   @IsString()
   title?: string;
 
-  @ApiPropertyOptional({ example: 'Summit Kedarkantha peak with certified mountaineering instructors.' })
+  @ApiPropertyOptional({
+    example:
+      'Summit Kedarkantha peak with certified mountaineering instructors.',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
@@ -161,10 +188,17 @@ export const ProgramSeoSchema = SchemaFactory.createForClass(ProgramSeo);
 export class GeoLocation {
   @ApiProperty({ example: 'Point', enum: ['Point'] })
   @Prop({ type: String, enum: ['Point'], default: 'Point' })
-  type: string;
+  @IsOptional()
+  @IsIn(['Point'])
+  type?: string;
 
-  @ApiProperty({ example: [78.18, 31.07], description: '[Longitude, Latitude]' })
+  @ApiProperty({
+    example: [78.18, 31.07],
+    description: '[Longitude, Latitude]',
+  })
   @Prop({ type: [Number], required: true, default: [0, 0] })
+  @IsArray()
+  @IsNumber({}, { each: true })
   coordinates: number[];
 }
 
@@ -213,7 +247,11 @@ export class Program {
   @IsString()
   slug: string;
 
-  @ApiProperty({ example: 'Trek', description: 'Category e.g. Trek, Premium Trip, Summer Camp, Learning Program' })
+  @ApiProperty({
+    example: 'Trek',
+    description:
+      'Category e.g. Trek, Premium Trip, Summer Camp, Learning Program',
+  })
   @Prop({ type: String, required: true, trim: true, index: true })
   @IsNotEmpty()
   @IsString()
@@ -231,13 +269,17 @@ export class Program {
   @IsString()
   region: string;
 
-  @ApiProperty({ example: 'Classic Himalayan snow trek with 360-degree summit views.' })
+  @ApiProperty({
+    example: 'Classic Himalayan snow trek with 360-degree summit views.',
+  })
   @Prop({ type: String, required: true, trim: true })
   @IsNotEmpty()
   @IsString()
   shortDescription: string;
 
-  @ApiPropertyOptional({ example: '<p>Comprehensive trek overview and historical background...</p>' })
+  @ApiPropertyOptional({
+    example: '<p>Comprehensive trek overview and historical background...</p>',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
@@ -264,7 +306,10 @@ export class Program {
   @IsNumber()
   duration: number;
 
-  @ApiProperty({ example: 'Easy to Moderate', description: 'Grade / Difficulty level' })
+  @ApiProperty({
+    example: 'Easy to Moderate',
+    description: 'Grade / Difficulty level',
+  })
   @Prop({ type: String, required: true, index: true })
   @IsNotEmpty()
   @IsString()
@@ -287,7 +332,10 @@ export class Program {
   @IsArray()
   season: string[];
 
-  @ApiProperty({ type: [String], example: ['December', 'January', 'February', 'March', 'April'] })
+  @ApiProperty({
+    type: [String],
+    example: ['December', 'January', 'February', 'March', 'April'],
+  })
   @Prop({ type: [String], default: [] })
   @IsArray()
   months: string[];
@@ -304,19 +352,26 @@ export class Program {
   @IsString()
   startPoint?: string;
 
-  @ApiPropertyOptional({ example: 'Guesthouse on Day 1 & 5; alpine 4-season tents on trek days' })
+  @ApiPropertyOptional({
+    example: 'Guesthouse on Day 1 & 5; alpine 4-season tents on trek days',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
   accommodation?: string;
 
-  @ApiPropertyOptional({ example: 'Wholesome hot meals (vegetarian with eggs) prepared fresh at campsites' })
+  @ApiPropertyOptional({
+    example:
+      'Wholesome hot meals (vegetarian with eggs) prepared fresh at campsites',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
   food?: string;
 
-  @ApiPropertyOptional({ example: 'Non-AC Tata Sumo / Bolero or Tempo Traveler from pickup hub' })
+  @ApiPropertyOptional({
+    example: 'Non-AC Tata Sumo / Bolero or Tempo Traveler from pickup hub',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
@@ -329,40 +384,72 @@ export class Program {
   @Type(() => ItineraryDay)
   itinerary: ItineraryDay[];
 
-  @ApiPropertyOptional({ example: 'Basic physical fitness. Ability to run 4-5 km comfortably in under 35 minutes.' })
+  @ApiPropertyOptional({
+    example:
+      'Basic physical fitness. Ability to run 4-5 km comfortably in under 35 minutes.',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
   eligibility?: string;
 
-  @ApiPropertyOptional({ example: 'Fly to Jolly Grant Airport Dehradun or take the overnight train from Delhi...' })
+  @ApiPropertyOptional({
+    example:
+      'Fly to Jolly Grant Airport Dehradun or take the overnight train from Delhi...',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
   howToReach?: string;
 
-  @ApiProperty({ type: [String], example: ['Certified Mountain Guides', 'Trek permits and forest entry', 'Quality mountaineering equipment'] })
+  @ApiProperty({
+    type: [String],
+    example: [
+      'Certified Mountain Guides',
+      'Trek permits and forest entry',
+      'Quality mountaineering equipment',
+    ],
+  })
   @Prop({ type: [String], default: [] })
   @IsArray()
   costIncludes: string[];
 
-  @ApiProperty({ type: [String], example: ['Personal gear / clothing', 'Mule or porter hire for offloading backpack', 'Emergency rescue expenses'] })
+  @ApiProperty({
+    type: [String],
+    example: [
+      'Personal gear / clothing',
+      'Mule or porter hire for offloading backpack',
+      'Emergency rescue expenses',
+    ],
+  })
   @Prop({ type: [String], default: [] })
   @IsArray()
   costExcludes: string[];
 
-  @ApiPropertyOptional({ example: 'Up to 30 days prior: 90% refund. 15-29 days: 50% refund. Under 15 days: No refund.' })
+  @ApiPropertyOptional({
+    example:
+      'Up to 30 days prior: 90% refund. 15-29 days: 50% refund. Under 15 days: No refund.',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
   cancellationPolicy?: string;
 
-  @ApiProperty({ type: [String], example: ['Warm thermal base layers', 'Waterproof trekking boots', 'Headlamp with extra batteries'] })
+  @ApiProperty({
+    type: [String],
+    example: [
+      'Warm thermal base layers',
+      'Waterproof trekking boots',
+      'Headlamp with extra batteries',
+    ],
+  })
   @Prop({ type: [String], default: [] })
   @IsArray()
   essentials: string[];
 
-  @ApiPropertyOptional({ example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+  @ApiPropertyOptional({
+    example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  })
   @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
@@ -433,4 +520,3 @@ ProgramSchema.index({
   region: 'text',
   category: 'text',
 });
-

@@ -4,13 +4,13 @@ import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
 
 @ApiTags('Health')
-@Controller('health')
+@Controller()
 export class HealthController {
   constructor(
     @Optional() @InjectConnection() private readonly connection?: Connection,
   ) {}
 
-  @Get()
+  @Get(['api/health', 'health'])
   @ApiOperation({ summary: 'Health Check Endpoint' })
   @ApiResponse({ status: 200, description: 'Application is healthy' })
   check() {

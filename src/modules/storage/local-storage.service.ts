@@ -1,9 +1,30 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { EnvironmentKey } from '@/config';
 import { IStorageService, UploadedFileResponse } from './storage.interface';
+
+const ALLOWED_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/svg+xml',
+  'image/gif',
+  'image/avif',
+  'application/pdf',
+]);
+
+const ALLOWED_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.svg',
+  '.gif',
+  '.avif',
+  '.pdf',
+]);
 
 @Injectable()
 export class LocalStorageService implements IStorageService {
@@ -29,12 +50,32 @@ export class LocalStorageService implements IStorageService {
     file: Express.Multer.File,
     folder = 'general',
   ): Promise<UploadedFileResponse> {
-    const targetDir = path.join(this.uploadDir, folder);
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (
+      !ALLOWED_EXTENSIONS.has(ext) ||
+      !ALLOWED_MIME_TYPES.has(file.mimetype.toLowerCase())
+    ) {
+      throw new BadRequestException(
+        `File type "${file.mimetype}" or extension "${ext}" is not supported. Allowed formats: JPG, PNG, WEBP, SVG, GIF, PDF.`,
+      );
+    }
+
+    // Sanitize folder to prevent path traversal
+    const safeFolder =
+      folder
+        .replace(/[^a-zA-Z0-9_\-\/]/g, '')
+        .replace(/\.\.+/g, '')
+        .replace(/^\/+|\/+$/g, '') || 'general';
+
+    const targetDir = path.resolve(this.uploadDir, safeFolder);
+    if (!targetDir.startsWith(this.uploadDir)) {
+      throw new BadRequestException('Invalid folder path');
+    }
+
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
 
-    const ext = path.extname(file.originalname).toLowerCase();
     const cleanBaseName = path
       .basename(file.originalname, ext)
       .replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -43,7 +84,9 @@ export class LocalStorageService implements IStorageService {
 
     await fs.promises.writeFile(targetFilePath, file.buffer);
 
-    const relativePath = path.join(folder, uniqueFilename).replace(/\\/g, '/');
+    const relativePath = path
+      .join(safeFolder, uniqueFilename)
+      .replace(/\\/g, '/');
     const url = `${this.baseUrl}/uploads/${relativePath}`;
 
     this.logger.log(`Uploaded file stored at ${targetFilePath} -> ${url}`);
@@ -58,10 +101,14 @@ export class LocalStorageService implements IStorageService {
   }
 
   async delete(relativePath: string): Promise<void> {
-    const filePath = path.join(this.uploadDir, relativePath);
-    if (fs.existsSync(filePath)) {
-      await fs.promises.unlink(filePath);
-      this.logger.log(`Deleted file at ${filePath}`);
+    const resolvedPath = path.resolve(this.uploadDir, relativePath);
+    if (!resolvedPath.startsWith(this.uploadDir)) {
+      throw new BadRequestException('Invalid file path for deletion');
+    }
+
+    if (fs.existsSync(resolvedPath)) {
+      await fs.promises.unlink(resolvedPath);
+      this.logger.log(`Deleted file at ${resolvedPath}`);
     }
   }
 
@@ -70,4 +117,3 @@ export class LocalStorageService implements IStorageService {
     return `${this.baseUrl}/uploads/${cleanPath}`;
   }
 }
-

@@ -69,7 +69,11 @@ export class HighlightService {
     return highlight;
   }
 
-  async update(id: string, organizationId: string, updateDto: UpdateHighlightDto) {
+  async update(
+    id: string,
+    organizationId: string,
+    updateDto: UpdateHighlightDto,
+  ) {
     const search: any = { organizationId: new Types.ObjectId(organizationId) };
     if (Types.ObjectId.isValid(id)) {
       search._id = new Types.ObjectId(id);
@@ -112,4 +116,3 @@ export class HighlightService {
       .replace(/--+/g, '-');
   }
 }
-

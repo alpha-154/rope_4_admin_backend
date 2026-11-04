@@ -23,7 +23,9 @@ export class CreateNewsDto {
   @IsString()
   title: string;
 
-  @ApiPropertyOptional({ example: 'essential-gear-for-winter-himalayan-expeditions' })
+  @ApiPropertyOptional({
+    example: 'essential-gear-for-winter-himalayan-expeditions',
+  })
   @IsOptional()
   @IsString()
   slug?: string;
@@ -33,12 +35,16 @@ export class CreateNewsDto {
   @IsString()
   cover?: string;
 
-  @ApiProperty({ example: 'A complete rundown of layers and sub-zero mountaineering gear.' })
+  @ApiProperty({
+    example: 'A complete rundown of layers and sub-zero mountaineering gear.',
+  })
   @IsNotEmpty()
   @IsString()
   excerpt: string;
 
-  @ApiPropertyOptional({ example: '<p>Comprehensive article body in HTML...</p>' })
+  @ApiPropertyOptional({
+    example: '<p>Comprehensive article body in HTML...</p>',
+  })
   @IsOptional()
   @IsString()
   content?: string;

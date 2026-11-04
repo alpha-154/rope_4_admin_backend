@@ -17,9 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { Authorization } from '../../common/decorators/authorization.decorator';
 import { GetOrgId } from '../../common/decorators/get-organizationId.decorator';
-import {
-  QueryFeatureMultiple,
-} from '../../common/decorators/query-features.decorator';
+import { QueryFeatureMultiple } from '../../common/decorators/query-features.decorator';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { IApiResponse } from '../../common/interfaces/api-response.interface';
 import { IQueryFeatures } from '../../common/interfaces/query-feature.interface';
@@ -31,7 +29,7 @@ import { Faq } from './entities/faq.entity';
 import { FaqService } from './faq.service';
 
 @ApiTags('FAQs')
-@Controller('faqs')
+@Controller()
 export class FaqController {
   constructor(private readonly faqService: FaqService) {}
 
@@ -42,7 +40,7 @@ export class FaqController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Create FAQ category and questions (Admin)' })
   @ApiResponse({ status: 201, type: Faq })
-  @Post()
+  @Post('faqs')
   async create(
     @GetOrgId() orgId: string,
     @Body() createFaqDto: CreateFaqDto,
@@ -60,13 +58,17 @@ export class FaqController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get all FAQs (Admin)' })
   @ApiResponse({ status: 200, type: [Faq] })
-  @Get('admin')
+  @Get('faqs/admin')
   async findAll(
     @GetOrgId() orgId: string,
     @QueryFeatureMultiple() query: IQueryFeatures,
   ): Promise<IApiResponse<Faq[]>> {
     // default sort by fractional index if no sort specified
-    if (!query.sort || Object.keys(query.sort).length === 0 || query.sort.createdAt) {
+    if (
+      !query.sort ||
+      Object.keys(query.sort).length === 0 ||
+      query.sort.createdAt
+    ) {
       query.sort = { index: 1 };
     }
     const result = await this.faqService.findAll(orgId, query);
@@ -87,7 +89,7 @@ export class FaqController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get single FAQ category by ID or slug (Admin)' })
   @ApiResponse({ status: 200, type: Faq })
-  @Get('admin/:id')
+  @Get('faqs/admin/:id')
   async findOne(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -105,7 +107,7 @@ export class FaqController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Update FAQ category (Admin)' })
   @ApiResponse({ status: 200, type: Faq })
-  @Patch(':id')
+  @Patch('faqs/:id')
   async update(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -122,9 +124,11 @@ export class FaqController {
   @ApiBearerAuth()
   @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   @UseGuards(AuthGuard)
-  @ApiOperation({ summary: 'Reorder FAQ category using fractional indexing (Admin)' })
+  @ApiOperation({
+    summary: 'Reorder FAQ category using fractional indexing (Admin)',
+  })
   @ApiResponse({ status: 200, type: Faq })
-  @Patch(':id/reorder')
+  @Patch('faqs/:id/reorder')
   async reorder(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -143,7 +147,7 @@ export class FaqController {
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Delete FAQ category (Admin)' })
   @ApiResponse({ status: 200 })
-  @Delete(':id')
+  @Delete('faqs/:id')
   async remove(
     @Param('id') id: string,
     @GetOrgId() orgId: string,
@@ -160,11 +164,13 @@ export class FaqController {
 
   @ApiOperation({ summary: 'Get all public FAQs (Website)' })
   @ApiResponse({ status: 200, type: [Faq] })
-  @Get('public')
+  @Get(['public/faqs', 'faqs/public'])
   async getPublicFaqs(
-    @Query('organizationId') organizationId?: string,
+    @GetOrgId() orgId?: string,
+    @Query('organizationId') queryOrgId?: string,
   ): Promise<IApiResponse<Faq[]>> {
-    const data = await this.faqService.findPublic(organizationId);
+    const targetOrgId = orgId || queryOrgId;
+    const data = await this.faqService.findPublic(targetOrgId);
     return {
       success: true,
       message: 'Public FAQs retrieved successfully',

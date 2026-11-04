@@ -36,7 +36,9 @@ export class CreateReviewDto {
   @IsDateString()
   date?: Date;
 
-  @ApiProperty({ example: 'Exceptional expedition leaders! High safety standards.' })
+  @ApiProperty({
+    example: 'Exceptional expedition leaders! High safety standards.',
+  })
   @IsNotEmpty()
   @IsString()
   text: string;

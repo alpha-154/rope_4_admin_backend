@@ -29,7 +29,10 @@ export type UserDocument = HydratedDocument<User>;
   toObject: { virtuals: true },
 })
 export class User extends Document {
-  @ApiProperty({ description: 'User email address', example: 'admin@rope4.org' })
+  @ApiProperty({
+    description: 'User email address',
+    example: 'admin@rope4.org',
+  })
   @Prop({
     type: String,
     required: true,
@@ -112,7 +115,9 @@ UserSchema.virtual('fullName').get(function (this: User) {
 });
 
 // Attach comparePassword to schema methods
-UserSchema.methods.comparePassword = async function (plainText: string): Promise<boolean> {
+UserSchema.methods.comparePassword = async function (
+  plainText: string,
+): Promise<boolean> {
   if (!this.passwordHash) return false;
   return bcrypt.compare(plainText, this.passwordHash);
 };

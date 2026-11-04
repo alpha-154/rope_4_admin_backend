@@ -3,7 +3,6 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -12,7 +11,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 import {
-  DepartureStatus,
   GeoLocation,
   ItineraryDay,
   ProgramDeparture,
@@ -48,7 +46,9 @@ export class CreateProgramDto {
   @IsString()
   region: string;
 
-  @ApiProperty({ example: 'Classic Himalayan snow trek with 360-degree summit views.' })
+  @ApiProperty({
+    example: 'Classic Himalayan snow trek with 360-degree summit views.',
+  })
   @IsNotEmpty()
   @IsString()
   shortDescription: string;
@@ -98,7 +98,10 @@ export class CreateProgramDto {
   @IsArray()
   season?: string[];
 
-  @ApiPropertyOptional({ type: [String], example: ['December', 'January', 'February'] })
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['December', 'January', 'February'],
+  })
   @IsOptional()
   @IsArray()
   months?: string[];
@@ -135,7 +138,9 @@ export class CreateProgramDto {
   @Type(() => ItineraryDay)
   itinerary?: ItineraryDay[];
 
-  @ApiPropertyOptional({ example: 'Basic fitness. Ability to run 4km comfortably.' })
+  @ApiPropertyOptional({
+    example: 'Basic fitness. Ability to run 4km comfortably.',
+  })
   @IsOptional()
   @IsString()
   eligibility?: string;
@@ -212,4 +217,3 @@ export class CreateProgramDto {
   @IsEnum(ProgramStatus)
   status?: ProgramStatus;
 }
-

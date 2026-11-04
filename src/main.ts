@@ -1,4 +1,4 @@
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { ValidationPipe, Logger, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -39,8 +39,10 @@ async function bootstrap() {
   // CORS configuration
   app.enableCors({
     origin: [
-      configService.get<string>(EnvironmentKey.FRONTEND_ADMIN_URL) || 'http://localhost:3001',
-      configService.get<string>(EnvironmentKey.FRONTEND_WEBSITE_URL) || 'http://localhost:3000',
+      configService.get<string>(EnvironmentKey.FRONTEND_ADMIN_URL) ||
+        'http://localhost:3001',
+      configService.get<string>(EnvironmentKey.FRONTEND_WEBSITE_URL) ||
+        'http://localhost:3000',
       'http://localhost:3000',
       'http://localhost:3001',
     ],
@@ -50,7 +52,12 @@ async function bootstrap() {
   });
 
   // Global prefix
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api/v1', {
+    exclude: [
+      { path: 'api/health', method: RequestMethod.GET },
+      { path: 'health', method: RequestMethod.GET },
+    ],
+  });
 
   // Global pipes & filters
   app.useGlobalPipes(
@@ -66,10 +73,15 @@ async function bootstrap() {
   // Swagger setup
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Rope4 Platform API')
-    .setDescription('Outdoor Education & Adventure Travel System - Admin & Public Endpoints')
+    .setDescription(
+      'Outdoor Education & Adventure Travel System - Admin & Public Endpoints',
+    )
     .setVersion('1.0')
     .addBearerAuth()
-    .addApiKey({ type: 'apiKey', name: 'x-organization-id', in: 'header' }, 'x-organization-id')
+    .addApiKey(
+      { type: 'apiKey', name: 'x-organization-id', in: 'header' },
+      'x-organization-id',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

@@ -11,7 +11,10 @@ import {
 import { HighlightItem } from '../entities/highlight.entity';
 
 export class CreateHighlightDto {
-  @ApiProperty({ example: 'why-choose-us', description: 'Section identifier key' })
+  @ApiProperty({
+    example: 'why-choose-us',
+    description: 'Section identifier key',
+  })
   @IsNotEmpty()
   @IsString()
   sectionKey: string;
@@ -31,12 +34,17 @@ export class CreateHighlightDto {
   @IsString()
   sectionTitle?: string;
 
-  @ApiPropertyOptional({ example: 'Pioneers in high-altitude treks and wilderness survival.' })
+  @ApiPropertyOptional({
+    example: 'Pioneers in high-altitude treks and wilderness survival.',
+  })
   @IsOptional()
   @IsString()
   sectionDescription?: string;
 
-  @ApiProperty({ type: [HighlightItem], description: 'Items in this highlight section' })
+  @ApiProperty({
+    type: [HighlightItem],
+    description: 'Items in this highlight section',
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => HighlightItem)
@@ -52,4 +60,3 @@ export class CreateHighlightDto {
   @IsBoolean()
   isPublic?: boolean;
 }
-

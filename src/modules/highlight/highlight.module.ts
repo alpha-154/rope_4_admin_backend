@@ -17,4 +17,3 @@ import { HighlightService } from './highlight.service';
   exports: [HighlightService],
 })
 export class HighlightModule {}
-

@@ -138,8 +138,9 @@ export class ReviewController {
   @Get('public/reviews')
   async getPublicReviews(
     @Query() queryDto: QueryPublicReviewsDto,
+    @GetOrgId({ required: false }) orgId?: string,
   ): Promise<IApiResponse<Review[]>> {
-    const result = await this.reviewService.findPublic(queryDto);
+    const result = await this.reviewService.findPublic(queryDto, orgId);
     return {
       success: true,
       message: 'Reviews retrieved successfully',
@@ -152,13 +153,17 @@ export class ReviewController {
     };
   }
 
-  @ApiOperation({ summary: 'Get aggregate rating score and breakdown (Website)' })
+  @ApiOperation({
+    summary: 'Get aggregate rating score and breakdown (Website)',
+  })
   @ApiResponse({ status: 200 })
   @Get('public/reviews/aggregate')
   async getAggregateRating(
-    @Query('organizationId') organizationId?: string,
+    @GetOrgId({ required: false }) orgId?: string,
+    @Query('organizationId') queryOrgId?: string,
   ): Promise<IApiResponse<any>> {
-    const data = await this.reviewService.getAggregateRating(organizationId);
+    const targetOrgId = orgId || queryOrgId;
+    const data = await this.reviewService.getAggregateRating(targetOrgId);
     return {
       success: true,
       message: 'Aggregate rating retrieved successfully',

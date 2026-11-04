@@ -67,4 +67,3 @@ export class RegisterOrgDto {
   @Type(() => RegisterOwnerDto)
   owner: RegisterOwnerDto;
 }
-

@@ -15,4 +15,3 @@ import { FaqService } from './faq.service';
   exports: [FaqService],
 })
 export class FaqModule {}
-

@@ -1,4 +1,5 @@
 import { FilterQuery, Model, PipelineStage } from 'mongoose';
+import { escapeRegex } from '../utils/escape-regex.util';
 import { IQueryFeatures } from '../interfaces/query-feature.interface';
 
 interface IOptions<T> {
@@ -41,7 +42,10 @@ export class QueryBuilder<T> {
   }
 
   private buildMatchStage(): PipelineStage.Match | null {
-    const filters = { ...(this.queryParams.filters || {}), ...this.filterQuery };
+    const filters = {
+      ...(this.queryParams.filters || {}),
+      ...this.filterQuery,
+    };
     const andConditions: any[] = [];
 
     if (Object.keys(filters).length > 0) {
@@ -49,9 +53,10 @@ export class QueryBuilder<T> {
     }
 
     if (this.queryParams.search && this.searchFields.length > 0) {
+      const safeSearch = escapeRegex(this.queryParams.search);
       const searchConditions = this.searchFields.map((field) => ({
         [field]: {
-          $regex: this.queryParams.search,
+          $regex: safeSearch,
           $options: 'i',
         },
       }));
@@ -63,7 +68,8 @@ export class QueryBuilder<T> {
     }
 
     return {
-      $match: andConditions.length === 1 ? andConditions[0] : { $and: andConditions },
+      $match:
+        andConditions.length === 1 ? andConditions[0] : { $and: andConditions },
     };
   }
 
@@ -74,7 +80,8 @@ export class QueryBuilder<T> {
   }
 
   private buildProjectStage(): PipelineStage.Project | PipelineStage.AddFields {
-    return this.queryParams.fields && Object.keys(this.queryParams.fields).length > 0
+    return this.queryParams.fields &&
+      Object.keys(this.queryParams.fields).length > 0
       ? { $project: this.queryParams.fields }
       : { $addFields: {} };
   }

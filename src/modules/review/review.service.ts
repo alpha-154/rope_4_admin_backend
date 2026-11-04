@@ -15,7 +15,10 @@ export class ReviewService {
     private readonly reviewModel: Model<ReviewDocument>,
   ) {}
 
-  async create(organizationId: string, createDto: CreateReviewDto): Promise<Review> {
+  async create(
+    organizationId: string,
+    createDto: CreateReviewDto,
+  ): Promise<Review> {
     const payload: any = {
       ...createDto,
       organizationId: new Types.ObjectId(organizationId),
@@ -54,7 +57,11 @@ export class ReviewService {
     return review;
   }
 
-  async update(id: string, organizationId: string, updateDto: UpdateReviewDto): Promise<Review> {
+  async update(
+    id: string,
+    organizationId: string,
+    updateDto: UpdateReviewDto,
+  ): Promise<Review> {
     const payload: any = { ...updateDto };
     if (updateDto.programId && Types.ObjectId.isValid(updateDto.programId)) {
       payload.programId = new Types.ObjectId(updateDto.programId);
@@ -93,14 +100,19 @@ export class ReviewService {
 
   // --- PUBLIC ENDPOINTS ---
 
-  async findPublic(queryDto: QueryPublicReviewsDto) {
+  async findPublic(queryDto: QueryPublicReviewsDto, organizationId?: string) {
     const page = queryDto.page && queryDto.page > 0 ? Number(queryDto.page) : 1;
-    const limit = queryDto.limit && queryDto.limit > 0 ? Number(queryDto.limit) : 10;
+    const limit =
+      queryDto.limit && queryDto.limit > 0 ? Number(queryDto.limit) : 10;
     const skip = (page - 1) * limit;
 
     const filter: FilterQuery<ReviewDocument> = {
       status: ReviewStatus.APPROVED,
     };
+
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
 
     if (queryDto.source) {
       filter.source = queryDto.source;

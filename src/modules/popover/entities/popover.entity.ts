@@ -3,7 +3,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsMongoId,
   IsNotEmpty,
@@ -84,7 +83,10 @@ export class Popover {
   @IsString()
   title: string;
 
-  @ApiProperty({ example: 'Book your Himalayan winter departure before November 30 and get 15% off.' })
+  @ApiProperty({
+    example:
+      'Book your Himalayan winter departure before November 30 and get 15% off.',
+  })
   @Prop({ type: String, required: true })
   @IsNotEmpty()
   @IsString()
@@ -103,12 +105,18 @@ export class Popover {
   @IsString()
   image?: string;
 
-  @ApiProperty({ example: 'all', description: 'all | home | programs | shop or custom path' })
+  @ApiProperty({
+    example: 'all',
+    description: 'all | home | programs | shop or custom path',
+  })
   @Prop({ type: String, default: 'all', index: true })
   @IsString()
   pageTargeting: string;
 
-  @ApiProperty({ example: 3, description: 'Trigger delay in seconds before showing' })
+  @ApiProperty({
+    example: 3,
+    description: 'Trigger delay in seconds before showing',
+  })
   @Prop({ type: Number, default: 3 })
   @IsNumber()
   triggerDelay: number;

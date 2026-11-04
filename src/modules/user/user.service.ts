@@ -1,12 +1,15 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import mongoose, { Model } from 'mongoose';
+import { UserRole } from '@/common/interfaces/token-payload.interface';
 import { EnvironmentKey } from '@/config';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -20,8 +23,23 @@ export class UserService {
     private readonly configService: ConfigService,
   ) {}
 
-  async create(orgId: string, dto: CreateUserDto): Promise<User> {
-    const existing = await this.userModel.findOne({ email: dto.email.toLowerCase() });
+  async create(
+    orgId: string,
+    dto: CreateUserDto,
+    creatorRole?: UserRole,
+  ): Promise<User> {
+    if (
+      dto.role === UserRole.SUPER_ADMIN &&
+      creatorRole !== UserRole.SUPER_ADMIN
+    ) {
+      throw new ForbiddenException(
+        'Only super admins can create super admin accounts',
+      );
+    }
+
+    const existing = await this.userModel.findOne({
+      email: dto.email.toLowerCase(),
+    });
     if (existing) {
       throw new ConflictException('User with this email already exists');
     }
@@ -45,7 +63,10 @@ export class UserService {
     return user.save();
   }
 
-  async findByEmail(email: string, includePassword = false): Promise<User | null> {
+  async findByEmail(
+    email: string,
+    includePassword = false,
+  ): Promise<User | null> {
     const query = this.userModel.findOne({
       email: email.toLowerCase(),
       isDeleted: false,
@@ -58,9 +79,27 @@ export class UserService {
     return query.exec();
   }
 
-  async findById(id: string, includePassword = false): Promise<User> {
-    const query = this.userModel.findOne({ _id: id, isDeleted: false });
-    if (includePassword) {
+  async findById(
+    id: string,
+    orgIdOrIncludePassword?: string | boolean,
+    includePassword = false,
+  ): Promise<User> {
+    let orgId: string | undefined;
+    let incPass = false;
+
+    if (typeof orgIdOrIncludePassword === 'boolean') {
+      incPass = orgIdOrIncludePassword;
+    } else {
+      orgId = orgIdOrIncludePassword;
+      incPass = includePassword;
+    }
+
+    const filter: Record<string, any> = { _id: id, isDeleted: false };
+    if (orgId) {
+      filter.organizationId = new mongoose.Types.ObjectId(orgId);
+    }
+    const query = this.userModel.findOne(filter);
+    if (incPass) {
       query.select('+passwordHash +refreshTokenHash');
     }
     const user = await query.exec();
@@ -80,8 +119,32 @@ export class UserService {
       .exec();
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<User> {
-    const user = await this.findById(id, true);
+  async update(
+    id: string,
+    orgIdOrDto: string | UpdateUserDto,
+    dtoOrEditorRole?: UpdateUserDto | UserRole,
+    editorRole?: UserRole,
+  ): Promise<User> {
+    let orgId: string | undefined;
+    let dto: UpdateUserDto;
+    let role: UserRole | undefined;
+
+    if (typeof orgIdOrDto === 'string') {
+      orgId = orgIdOrDto;
+      dto = dtoOrEditorRole as UpdateUserDto;
+      role = editorRole;
+    } else {
+      dto = orgIdOrDto as UpdateUserDto;
+      role = dtoOrEditorRole as UserRole;
+    }
+
+    const user = await this.findById(id, orgId, true);
+
+    if (dto.role === UserRole.SUPER_ADMIN && role !== UserRole.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        'Only super admins can assign the super admin role',
+      );
+    }
 
     if (dto.email && dto.email.toLowerCase() !== user.email) {
       const existing = await this.userModel.findOne({
@@ -109,7 +172,10 @@ export class UserService {
     return user.save();
   }
 
-  async updateRefreshToken(id: string, refreshToken: string | null): Promise<void> {
+  async updateRefreshToken(
+    id: string,
+    refreshToken: string | null,
+  ): Promise<void> {
     if (!refreshToken) {
       await this.userModel.findByIdAndUpdate(id, { refreshTokenHash: null });
       return;
@@ -117,13 +183,21 @@ export class UserService {
 
     const saltRounds =
       this.configService.get<number>(EnvironmentKey.BCRYPT_SALT_ROUNDS) || 10;
-    const refreshTokenHash = await bcrypt.hash(refreshToken, saltRounds);
+    // Pre-hash with SHA-256 to ensure input to bcrypt is strictly 64 characters (below bcrypt's 72-byte truncation limit)
+    const tokenHash = crypto
+      .createHash('sha256')
+      .update(refreshToken)
+      .digest('hex');
+    const refreshTokenHash = await bcrypt.hash(tokenHash, saltRounds);
 
     await this.userModel.findByIdAndUpdate(id, { refreshTokenHash });
   }
 
-  async softDelete(id: string): Promise<void> {
-    await this.userModel.findByIdAndUpdate(id, { isDeleted: true, isActive: false });
+  async softDelete(id: string, orgId: string): Promise<void> {
+    const user = await this.findById(id, orgId);
+    await this.userModel.updateOne(
+      { _id: user._id, organizationId: new mongoose.Types.ObjectId(orgId) },
+      { isDeleted: true, isActive: false },
+    );
   }
 }
-

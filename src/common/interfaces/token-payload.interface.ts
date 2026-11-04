@@ -12,4 +12,3 @@ export interface TokenPayload {
   firstName?: string;
   lastName?: string;
 }
-

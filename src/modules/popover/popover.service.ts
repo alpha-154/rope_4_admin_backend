@@ -14,7 +14,10 @@ export class PopoverService {
     private readonly popoverModel: Model<PopoverDocument>,
   ) {}
 
-  async create(organizationId: string, createDto: CreatePopoverDto): Promise<Popover> {
+  async create(
+    organizationId: string,
+    createDto: CreatePopoverDto,
+  ): Promise<Popover> {
     const created = await this.popoverModel.create({
       ...createDto,
       organizationId: new Types.ObjectId(organizationId),
@@ -50,7 +53,11 @@ export class PopoverService {
     return popover;
   }
 
-  async update(id: string, organizationId: string, updateDto: UpdatePopoverDto): Promise<Popover> {
+  async update(
+    id: string,
+    organizationId: string,
+    updateDto: UpdatePopoverDto,
+  ): Promise<Popover> {
     const updated = await this.popoverModel
       .findOneAndUpdate(
         {
@@ -84,7 +91,7 @@ export class PopoverService {
 
   // --- PUBLIC ENDPOINTS ---
 
-  async findActivePopovers(page?: string) {
+  async findActivePopovers(page?: string, organizationId?: string) {
     const now = new Date();
     const filter: FilterQuery<PopoverDocument> = {
       isActive: true,
@@ -106,11 +113,12 @@ export class PopoverService {
       ],
     };
 
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
+
     if (page) {
-      filter.$or = [
-        { pageTargeting: 'all' },
-        { pageTargeting: page },
-      ];
+      filter.$or = [{ pageTargeting: 'all' }, { pageTargeting: page }];
     }
 
     return await this.popoverModel

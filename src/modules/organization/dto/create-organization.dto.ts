@@ -89,4 +89,3 @@ export class CreateOrganizationDto {
   @Type(() => OrgSettingsDto)
   settings?: OrgSettingsDto;
 }
-

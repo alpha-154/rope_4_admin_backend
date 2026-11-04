@@ -20,4 +20,3 @@ import {
   exports: [OrganizationService, MongooseModule],
 })
 export class OrganizationModule {}
-

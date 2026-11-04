@@ -10,4 +10,3 @@ import { StorageController } from './storage.controller';
   exports: [LocalStorageService],
 })
 export class StorageModule {}
-

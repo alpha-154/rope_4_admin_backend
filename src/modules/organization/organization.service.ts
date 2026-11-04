@@ -51,6 +51,13 @@ export class OrganizationService {
     return org;
   }
 
+  async findDefaultOrFirst(): Promise<Organization | null> {
+    return this.orgModel
+      .findOne({ isActive: true, isDeleted: false })
+      .sort({ createdAt: 1 })
+      .exec();
+  }
+
   async findBySlug(slug: string): Promise<Organization> {
     const org = await this.orgModel.findOne({ slug, isDeleted: false });
     if (!org) {
@@ -88,4 +95,3 @@ export class OrganizationService {
     return org.save();
   }
 }
-

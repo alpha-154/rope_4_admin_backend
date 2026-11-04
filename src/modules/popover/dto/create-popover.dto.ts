@@ -10,7 +10,11 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
-import { PopoverCta, PopoverFrequency, PopoverType } from '../entities/popover.entity';
+import {
+  PopoverCta,
+  PopoverFrequency,
+  PopoverType,
+} from '../entities/popover.entity';
 
 export class CreatePopoverDto {
   @ApiProperty({ enum: PopoverType, default: PopoverType.MODAL })
@@ -48,7 +52,10 @@ export class CreatePopoverDto {
   @IsNumber()
   triggerDelay?: number;
 
-  @ApiPropertyOptional({ enum: PopoverFrequency, default: PopoverFrequency.ALWAYS })
+  @ApiPropertyOptional({
+    enum: PopoverFrequency,
+    default: PopoverFrequency.ALWAYS,
+  })
   @IsOptional()
   @IsEnum(PopoverFrequency)
   displayFrequency?: PopoverFrequency;

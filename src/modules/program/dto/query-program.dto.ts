@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class QueryPublicProgramsDto {
@@ -59,7 +59,13 @@ export class QueryPublicProgramsDto {
 
   @ApiPropertyOptional({ example: 'true' })
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true || value === 1 || value === '1')
+      return true;
+    if (value === 'false' || value === false || value === 0 || value === '0')
+      return false;
+    return value;
+  })
   @IsBoolean()
   isFeatured?: boolean;
 
@@ -68,7 +74,10 @@ export class QueryPublicProgramsDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ example: '-createdAt', description: 'Sort e.g. price, -price, duration, -duration, -createdAt' })
+  @ApiPropertyOptional({
+    example: '-createdAt',
+    description: 'Sort e.g. price, -price, duration, -duration, -createdAt',
+  })
   @IsOptional()
   @IsString()
   sort?: string;
@@ -85,9 +94,11 @@ export class QueryPublicProgramsDto {
   @IsNumber()
   limit?: number;
 
-  @ApiPropertyOptional({ example: '78.18,31.07,50000', description: 'lng,lat,maxDistanceMeters for 2dsphere near search' })
+  @ApiPropertyOptional({
+    example: '78.18,31.07,50000',
+    description: 'lng,lat,maxDistanceMeters for 2dsphere near search',
+  })
   @IsOptional()
   @IsString()
   near?: string;
 }
-

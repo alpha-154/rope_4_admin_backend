@@ -23,7 +23,9 @@ export class FaqItem {
   @IsNotEmpty()
   question: string;
 
-  @ApiProperty({ example: 'Participants should be able to jog 5km in under 35 minutes.' })
+  @ApiProperty({
+    example: 'Participants should be able to jog 5km in under 35 minutes.',
+  })
   @Prop({ type: String, required: true, trim: true })
   @IsString()
   @IsNotEmpty()
@@ -54,12 +56,18 @@ export class Faq {
   @IsNotEmpty()
   category: string;
 
-  @ApiProperty({ example: 'beginners-guide', description: 'URL-friendly slug for the FAQ group' })
+  @ApiProperty({
+    example: 'beginners-guide',
+    description: 'URL-friendly slug for the FAQ group',
+  })
   @Prop({ type: String, required: true, trim: true })
   @IsString()
   slug: string;
 
-  @ApiPropertyOptional({ example: 'a0', description: 'Fractional index for category order' })
+  @ApiPropertyOptional({
+    example: 'a0',
+    description: 'Fractional index for category order',
+  })
   @Prop({ type: String, default: null })
   @IsOptional()
   @IsString()
@@ -83,4 +91,3 @@ export const FaqSchema = SchemaFactory.createForClass(Faq);
 
 FaqSchema.index({ organizationId: 1, slug: 1 }, { unique: true });
 FaqSchema.index({ organizationId: 1, index: 1 });
-

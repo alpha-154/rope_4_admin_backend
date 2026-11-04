@@ -3,10 +3,16 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { QueryBuilder } from '../../common/helpers/mongodb-query-builder.helper';
 import { IQueryFeatures } from '../../common/interfaces/query-feature.interface';
+import { escapeRegex } from '../../common/utils/escape-regex.util';
+import { sanitizeHtml } from '../../common/utils/sanitize-html.util';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { QueryPublicProgramsDto } from './dto/query-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
-import { Program, ProgramDocument, ProgramStatus } from './entities/program.entity';
+import {
+  Program,
+  ProgramDocument,
+  ProgramStatus,
+} from './entities/program.entity';
 
 @Injectable()
 export class ProgramService {
@@ -15,23 +21,59 @@ export class ProgramService {
     private readonly programModel: Model<ProgramDocument>,
   ) {}
 
-  async create(organizationId: string, createDto: CreateProgramDto): Promise<Program> {
+  async create(
+    organizationId: string,
+    createDto: CreateProgramDto,
+  ): Promise<Program> {
     const orgObjId = new Types.ObjectId(organizationId);
     const baseSlug = createDto.slug || this.slugify(createDto.title);
     const slug = await this.generateUniqueSlug(baseSlug, orgObjId);
 
-    const created = await this.programModel.create({
+    const payload = {
       ...createDto,
-      slug,
-      organizationId: orgObjId,
-    });
+      description: createDto.description
+        ? sanitizeHtml(createDto.description)
+        : createDto.description,
+      itinerary: createDto.itinerary?.map((it) => ({
+        ...it,
+        description: it.description
+          ? sanitizeHtml(it.description)
+          : it.description,
+      })),
+    };
+
+    let created: ProgramDocument;
+    try {
+      created = await this.programModel.create({
+        ...payload,
+        slug,
+        organizationId: orgObjId,
+      });
+    } catch (err: any) {
+      if (err.code === 11000 && err.keyPattern?.slug) {
+        const fallbackSlug = `${slug}-${Date.now().toString(36)}`;
+        created = await this.programModel.create({
+          ...payload,
+          slug: fallbackSlug,
+          organizationId: orgObjId,
+        });
+      } else {
+        throw err;
+      }
+    }
 
     return created;
   }
 
   async findAll(organizationId: string, query: IQueryFeatures) {
     const queryBuilder = new QueryBuilder(this.programModel, query, {
-      searchFields: ['title', 'category', 'country', 'region', 'difficulty'] as any,
+      searchFields: [
+        'title',
+        'category',
+        'country',
+        'region',
+        'difficulty',
+      ] as any,
     });
 
     if (organizationId) {
@@ -58,7 +100,11 @@ export class ProgramService {
     return program;
   }
 
-  async update(id: string, organizationId: string, updateDto: UpdateProgramDto): Promise<Program> {
+  async update(
+    id: string,
+    organizationId: string,
+    updateDto: UpdateProgramDto,
+  ): Promise<Program> {
     const search: any = { organizationId: new Types.ObjectId(organizationId) };
     if (Types.ObjectId.isValid(id)) {
       search._id = new Types.ObjectId(id);
@@ -68,6 +114,18 @@ export class ProgramService {
 
     if (updateDto.slug) {
       updateDto.slug = this.slugify(updateDto.slug);
+    }
+
+    if (updateDto.description) {
+      updateDto.description = sanitizeHtml(updateDto.description);
+    }
+    if (updateDto.itinerary) {
+      updateDto.itinerary = updateDto.itinerary.map((it) => ({
+        ...it,
+        description: it.description
+          ? sanitizeHtml(it.description)
+          : it.description,
+      }));
     }
 
     const updated = await this.programModel
@@ -97,57 +155,80 @@ export class ProgramService {
 
   // --- PUBLIC ENDPOINTS (WEBSITE) ---
 
-  async findPublicPrograms(queryDto: QueryPublicProgramsDto) {
+  async findPublicPrograms(
+    queryDto: QueryPublicProgramsDto,
+    organizationId?: string,
+  ) {
     const page = queryDto.page && queryDto.page > 0 ? Number(queryDto.page) : 1;
-    const limit = queryDto.limit && queryDto.limit > 0 ? Number(queryDto.limit) : 10;
+    const limit =
+      queryDto.limit && queryDto.limit > 0 ? Number(queryDto.limit) : 10;
     const skip = (page - 1) * limit;
 
     const filter: FilterQuery<ProgramDocument> = {
       status: ProgramStatus.PUBLISHED,
     };
 
+    if (organizationId) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
+
     if (queryDto.category) {
-      filter.category = { $regex: new RegExp(`^${queryDto.category}$`, 'i') };
+      filter.category = {
+        $regex: new RegExp(`^${escapeRegex(queryDto.category)}$`, 'i'),
+      };
     }
 
     if (queryDto.country) {
-      filter.country = { $regex: new RegExp(`^${queryDto.country}$`, 'i') };
+      filter.country = {
+        $regex: new RegExp(`^${escapeRegex(queryDto.country)}$`, 'i'),
+      };
     }
 
     if (queryDto.region) {
-      filter.region = { $regex: new RegExp(`^${queryDto.region}$`, 'i') };
+      filter.region = {
+        $regex: new RegExp(`^${escapeRegex(queryDto.region)}$`, 'i'),
+      };
     }
 
     if (queryDto.difficulty) {
-      filter.difficulty = { $regex: new RegExp(queryDto.difficulty, 'i') };
+      filter.difficulty = {
+        $regex: new RegExp(escapeRegex(queryDto.difficulty), 'i'),
+      };
     }
 
     if (queryDto.season) {
-      filter.season = { $in: [new RegExp(queryDto.season, 'i')] };
+      filter.season = { $in: [new RegExp(escapeRegex(queryDto.season), 'i')] };
     }
 
     if (queryDto.month) {
-      filter.months = { $in: [new RegExp(queryDto.month, 'i')] };
+      filter.months = { $in: [new RegExp(escapeRegex(queryDto.month), 'i')] };
     }
 
     if (typeof queryDto.isFeatured === 'boolean') {
       filter.isFeatured = queryDto.isFeatured;
     }
 
-    if (queryDto.minDuration !== undefined || queryDto.maxDuration !== undefined) {
+    if (
+      queryDto.minDuration !== undefined ||
+      queryDto.maxDuration !== undefined
+    ) {
       filter.duration = {};
-      if (queryDto.minDuration !== undefined) filter.duration.$gte = Number(queryDto.minDuration);
-      if (queryDto.maxDuration !== undefined) filter.duration.$lte = Number(queryDto.maxDuration);
+      if (queryDto.minDuration !== undefined)
+        filter.duration.$gte = Number(queryDto.minDuration);
+      if (queryDto.maxDuration !== undefined)
+        filter.duration.$lte = Number(queryDto.maxDuration);
     }
 
     if (queryDto.minPrice !== undefined || queryDto.maxPrice !== undefined) {
       filter['price.amount'] = {};
-      if (queryDto.minPrice !== undefined) filter['price.amount'].$gte = Number(queryDto.minPrice);
-      if (queryDto.maxPrice !== undefined) filter['price.amount'].$lte = Number(queryDto.maxPrice);
+      if (queryDto.minPrice !== undefined)
+        filter['price.amount'].$gte = Number(queryDto.minPrice);
+      if (queryDto.maxPrice !== undefined)
+        filter['price.amount'].$lte = Number(queryDto.maxPrice);
     }
 
     if (queryDto.search) {
-      const searchRegex = new RegExp(queryDto.search, 'i');
+      const searchRegex = new RegExp(escapeRegex(queryDto.search), 'i');
       filter.$or = [
         { title: searchRegex },
         { shortDescription: searchRegex },
@@ -158,9 +239,11 @@ export class ProgramService {
     }
 
     // Geospatial search if 'near' query supplied: "lng,lat,maxDistanceMeters"
+    let hasNearQuery = false;
     if (queryDto.near) {
       const parts = queryDto.near.split(',').map((p) => parseFloat(p.trim()));
       if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        hasNearQuery = true;
         const [lng, lat, maxDistance] = parts;
         filter.location = {
           $near: {
@@ -187,8 +270,22 @@ export class ProgramService {
       } else {
         sort[sortField] = sortDirection;
       }
-    } else {
+    } else if (!hasNearQuery) {
+      // MongoDB requires $near to define the sort order; only apply createdAt sort if not using $near
       sort.createdAt = -1;
+    }
+
+    // Clone filter for countDocuments without $near (MongoDB countDocuments does not support $near)
+    const countFilter: FilterQuery<ProgramDocument> = { ...filter };
+    if (hasNearQuery && (countFilter.location as any)?.$near) {
+      const nearData = (countFilter.location as any).$near;
+      const coords = nearData.$geometry.coordinates;
+      const maxDistance = nearData.$maxDistance || 500000;
+      countFilter.location = {
+        $geoWithin: {
+          $centerSphere: [coords, maxDistance / 6378100],
+        },
+      } as any;
     }
 
     const [items, total] = await Promise.all([
@@ -199,7 +296,7 @@ export class ProgramService {
         .limit(limit)
         .lean()
         .exec(),
-      this.programModel.countDocuments(filter).exec(),
+      this.programModel.countDocuments(countFilter).exec(),
     ]);
 
     return {
@@ -211,14 +308,23 @@ export class ProgramService {
     };
   }
 
-  async findPublicProgramBySlug(slug: string): Promise<Program> {
-    const program = await this.programModel
-      .findOne({ slug, status: ProgramStatus.PUBLISHED })
-      .lean()
-      .exec();
+  async findPublicProgramBySlug(
+    slug: string,
+    organizationId?: string,
+  ): Promise<Program> {
+    const filter: FilterQuery<ProgramDocument> = {
+      slug,
+      status: ProgramStatus.PUBLISHED,
+    };
+    if (organizationId) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
+    const program = await this.programModel.findOne(filter).lean().exec();
 
     if (!program) {
-      throw new NotFoundException(`Published program with slug "${slug}" not found`);
+      throw new NotFoundException(
+        `Published program with slug "${slug}" not found`,
+      );
     }
 
     return program as unknown as Program;
@@ -234,7 +340,10 @@ export class ProgramService {
       .replace(/--+/g, '-');
   }
 
-  private async generateUniqueSlug(base: string, organizationId: Types.ObjectId): Promise<string> {
+  private async generateUniqueSlug(
+    base: string,
+    organizationId: Types.ObjectId,
+  ): Promise<string> {
     const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const existing = await this.programModel
       .find(
@@ -260,4 +369,3 @@ export class ProgramService {
     return `${base}-${max + 1}`;
   }
 }
-

@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { QueryBuilder } from '../../common/helpers/mongodb-query-builder.helper';
 import { IQueryFeatures } from '../../common/interfaces/query-feature.interface';
+import { escapeRegex } from '../../common/utils/escape-regex.util';
+import { sanitizeHtml } from '../../common/utils/sanitize-html.util';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { QueryPublicNewsDto } from './dto/query-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
@@ -15,16 +17,38 @@ export class NewsService {
     private readonly newsModel: Model<NewsDocument>,
   ) {}
 
-  async create(organizationId: string, createDto: CreateNewsDto): Promise<News> {
+  async create(
+    organizationId: string,
+    createDto: CreateNewsDto,
+  ): Promise<News> {
     const orgObjId = new Types.ObjectId(organizationId);
     const baseSlug = createDto.slug || this.slugify(createDto.title);
     const slug = await this.generateUniqueSlug(baseSlug, orgObjId);
 
-    const created = await this.newsModel.create({
+    const payload = {
       ...createDto,
-      slug,
-      organizationId: orgObjId,
-    });
+      content: createDto.content ? sanitizeHtml(createDto.content) : '',
+    };
+
+    let created: NewsDocument;
+    try {
+      created = await this.newsModel.create({
+        ...payload,
+        slug,
+        organizationId: orgObjId,
+      });
+    } catch (err: any) {
+      if (err.code === 11000 && err.keyPattern?.slug) {
+        const fallbackSlug = `${slug}-${Date.now().toString(36)}`;
+        created = await this.newsModel.create({
+          ...payload,
+          slug: fallbackSlug,
+          organizationId: orgObjId,
+        });
+      } else {
+        throw err;
+      }
+    }
 
     return created;
   }
@@ -58,7 +82,11 @@ export class NewsService {
     return item;
   }
 
-  async update(id: string, organizationId: string, updateDto: UpdateNewsDto): Promise<News> {
+  async update(
+    id: string,
+    organizationId: string,
+    updateDto: UpdateNewsDto,
+  ): Promise<News> {
     const search: any = { organizationId: new Types.ObjectId(organizationId) };
     if (Types.ObjectId.isValid(id)) {
       search._id = new Types.ObjectId(id);
@@ -68,6 +96,10 @@ export class NewsService {
 
     if (updateDto.slug) {
       updateDto.slug = this.slugify(updateDto.slug);
+    }
+
+    if (updateDto.content) {
+      updateDto.content = sanitizeHtml(updateDto.content);
     }
 
     const updated = await this.newsModel
@@ -97,14 +129,19 @@ export class NewsService {
 
   // --- PUBLIC ENDPOINTS ---
 
-  async findPublicNews(queryDto: QueryPublicNewsDto) {
+  async findPublicNews(queryDto: QueryPublicNewsDto, organizationId?: string) {
     const page = queryDto.page && queryDto.page > 0 ? Number(queryDto.page) : 1;
-    const limit = queryDto.limit && queryDto.limit > 0 ? Number(queryDto.limit) : 10;
+    const limit =
+      queryDto.limit && queryDto.limit > 0 ? Number(queryDto.limit) : 10;
     const skip = (page - 1) * limit;
 
     const filter: FilterQuery<NewsDocument> = {
       status: NewsStatus.PUBLISHED,
     };
+
+    if (organizationId) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
 
     if (queryDto.type) {
       filter.type = queryDto.type;
@@ -119,7 +156,8 @@ export class NewsService {
     }
 
     if (queryDto.search) {
-      const searchRegex = new RegExp(queryDto.search, 'i');
+      const safeSearch = escapeRegex(queryDto.search);
+      const searchRegex = new RegExp(safeSearch, 'i');
       filter.$or = [
         { title: searchRegex },
         { excerpt: searchRegex },
@@ -147,14 +185,25 @@ export class NewsService {
     };
   }
 
-  async findPublicNewsBySlug(slug: string): Promise<News> {
-    const item = await this.newsModel
-      .findOne({ slug, status: NewsStatus.PUBLISHED })
-      .lean()
-      .exec();
+  async findPublicNewsBySlug(
+    slug: string,
+    organizationId?: string,
+  ): Promise<News> {
+    const filter: FilterQuery<NewsDocument> = {
+      slug,
+      status: NewsStatus.PUBLISHED,
+    };
+
+    if (organizationId) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
+
+    const item = await this.newsModel.findOne(filter).lean().exec();
 
     if (!item) {
-      throw new NotFoundException(`Published article with slug "${slug}" not found`);
+      throw new NotFoundException(
+        `Published article with slug "${slug}" not found`,
+      );
     }
 
     return item as unknown as News;
@@ -170,7 +219,10 @@ export class NewsService {
       .replace(/--+/g, '-');
   }
 
-  private async generateUniqueSlug(base: string, organizationId: Types.ObjectId): Promise<string> {
+  private async generateUniqueSlug(
+    base: string,
+    organizationId: Types.ObjectId,
+  ): Promise<string> {
     const esc = (s: string) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     const existing = await this.newsModel
       .find(

@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Patch,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Patch, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -22,7 +15,7 @@ import { Organization } from './entities/organization.entity';
 import { OrganizationService } from './organization.service';
 
 @ApiTags('Organization')
-@Controller('v1')
+@Controller()
 export class OrganizationController {
   constructor(private readonly orgService: OrganizationService) {}
 
@@ -63,4 +56,3 @@ export class OrganizationController {
     return this.orgService.findById(orgId || '');
   }
 }
-

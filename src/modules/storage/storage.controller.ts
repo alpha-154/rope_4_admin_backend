@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Post,
@@ -16,7 +17,6 @@ import {
   ApiConsumes,
   ApiOperation,
   ApiQuery,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { AuthGuard } from '@/common/guards/auth.guard';
@@ -25,7 +25,7 @@ import { LocalStorageService } from './local-storage.service';
 @ApiTags('Storage')
 @ApiBearerAuth()
 @UseGuards(AuthGuard)
-@Controller('v1/admin/storage')
+@Controller('admin/storage')
 export class StorageController {
   constructor(private readonly storageService: LocalStorageService) {}
 
@@ -53,12 +53,14 @@ export class StorageController {
   )
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
-    @Query('folder') folder?: string,
+    @Query('folder') queryFolder?: string,
+    @Body('folder') bodyFolder?: string,
   ) {
     if (!file) {
       throw new BadRequestException('No file provided for upload');
     }
-    return this.storageService.upload(file, folder || 'general');
+    const folder = bodyFolder || queryFolder || 'general';
+    return this.storageService.upload(file, folder);
   }
 
   @Post('upload-multiple')
@@ -88,20 +90,26 @@ export class StorageController {
   )
   async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],
-    @Query('folder') folder?: string,
+    @Query('folder') queryFolder?: string,
+    @Body('folder') bodyFolder?: string,
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }
+    const folder = bodyFolder || queryFolder || 'general';
     const uploaded = await Promise.all(
-      files.map((f) => this.storageService.upload(f, folder || 'general')),
+      files.map((f) => this.storageService.upload(f, folder)),
     );
     return uploaded;
   }
 
   @Delete('file')
   @ApiOperation({ summary: 'Delete file by relative path' })
-  @ApiQuery({ name: 'path', required: true, example: 'programs/keokradong.jpg' })
+  @ApiQuery({
+    name: 'path',
+    required: true,
+    example: 'programs/keokradong.jpg',
+  })
   async deleteFile(@Query('path') filePath: string) {
     if (!filePath) {
       throw new BadRequestException('File path is required');
@@ -110,4 +118,3 @@ export class StorageController {
     return { message: 'File deleted successfully' };
   }
 }
-

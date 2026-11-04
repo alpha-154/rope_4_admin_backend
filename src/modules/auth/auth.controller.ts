@@ -25,13 +25,18 @@ import { RegisterOrgDto } from './dto/register-org.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('Admin Auth')
-@Controller('v1/admin/auth')
+@Controller('admin/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register an organization with owner admin account' })
-  @ApiResponse({ status: 201, description: 'Organization registered successfully' })
+  @ApiOperation({
+    summary: 'Register an organization with owner admin account',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Organization registered successfully',
+  })
   async register(@Body() dto: RegisterOrgDto) {
     return this.authService.registerOrg(dto);
   }
@@ -96,4 +101,3 @@ export class AuthController {
     return this.authService.updateProfile(user.userId, dto);
   }
 }
-

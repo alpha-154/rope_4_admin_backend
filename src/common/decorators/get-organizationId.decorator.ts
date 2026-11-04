@@ -6,7 +6,10 @@ import {
 import { TokenPayload } from '../interfaces/token-payload.interface';
 
 export const GetOrgId = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): string => {
+  (
+    options: { required?: boolean } | undefined,
+    ctx: ExecutionContext,
+  ): string | undefined => {
     const request = ctx.switchToHttp().getRequest();
     const user = request.user as TokenPayload;
 
@@ -18,6 +21,9 @@ export const GetOrgId = createParamDecorator(
       request.headers['x-organization-id'] || request.query['organizationId'];
 
     if (!orgHeader) {
+      if (options?.required === false) {
+        return undefined;
+      }
       throw new BadRequestException(
         'Organization ID is required in headers (x-organization-id) or query',
       );
@@ -26,4 +32,3 @@ export const GetOrgId = createParamDecorator(
     return orgHeader as string;
   },
 );
-

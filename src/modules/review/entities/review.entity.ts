@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
-  IsDateString,
   IsEnum,
   IsMongoId,
   IsNotEmpty,
@@ -72,7 +71,10 @@ export class Review {
   @IsOptional()
   date: Date;
 
-  @ApiProperty({ example: 'Exceptional expedition leaders! The safety standards on summit day were world-class.' })
+  @ApiProperty({
+    example:
+      'Exceptional expedition leaders! The safety standards on summit day were world-class.',
+  })
   @Prop({ type: String, required: true, trim: true })
   @IsNotEmpty()
   @IsString()
