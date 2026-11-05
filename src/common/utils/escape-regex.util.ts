@@ -6,4 +6,3 @@ export function escapeRegex(text: string): string {
   if (!text) return '';
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
-

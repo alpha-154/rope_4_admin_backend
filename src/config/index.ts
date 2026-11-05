@@ -10,6 +10,9 @@ export enum EnvironmentKey {
   FRONTEND_ADMIN_URL = 'FRONTEND_ADMIN_URL',
   FRONTEND_WEBSITE_URL = 'FRONTEND_WEBSITE_URL',
   UPLOAD_DIR = 'UPLOAD_DIR',
+  BREVO_API_KEY = 'BREVO_API_KEY',
+  BREVO_SENDER_EMAIL = 'BREVO_SENDER_EMAIL',
+  BREVO_SENDER_NAME = 'BREVO_SENDER_NAME',
 }
 
 export const configuration = () => ({
@@ -38,4 +41,9 @@ export const configuration = () => ({
   [EnvironmentKey.FRONTEND_WEBSITE_URL]:
     process.env.FRONTEND_WEBSITE_URL || 'http://localhost:3000',
   [EnvironmentKey.UPLOAD_DIR]: process.env.UPLOAD_DIR || './uploads',
+  [EnvironmentKey.BREVO_API_KEY]: process.env.BREVO_API_KEY || '',
+  [EnvironmentKey.BREVO_SENDER_EMAIL]:
+    process.env.BREVO_SENDER_EMAIL || 'support@rope4.org',
+  [EnvironmentKey.BREVO_SENDER_NAME]:
+    process.env.BREVO_SENDER_NAME || 'Rope4 Adventure',
 });
