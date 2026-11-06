@@ -69,6 +69,14 @@ export class HighlightService {
     return highlight;
   }
 
+  async findAllPublic(organizationId?: string) {
+    const filter: any = { isActive: true, isPublic: true };
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
+      filter.organizationId = new Types.ObjectId(organizationId);
+    }
+    return this.highlightModel.find(filter).sort({ orderIndex: 1 }).exec();
+  }
+
   async update(
     id: string,
     organizationId: string,

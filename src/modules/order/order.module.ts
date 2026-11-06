@@ -31,4 +31,3 @@ import { OrderService } from './order.service';
   exports: [OrderService, MongooseModule],
 })
 export class OrderModule {}
-

@@ -134,6 +134,22 @@ export class HighlightController {
 
   // --- PUBLIC ENDPOINTS (CONSUMED BY WEBSITE) ---
 
+  @ApiOperation({ summary: 'Get all public highlights (Website)' })
+  @ApiResponse({ status: 200, type: [Highlight] })
+  @Get(['public/highlights', 'highlights/public'])
+  async getAllPublicHighlights(
+    @GetOrgId() orgId?: string,
+    @Query('organizationId') queryOrgId?: string,
+  ): Promise<IApiResponse<Highlight[]>> {
+    const targetOrgId = orgId || queryOrgId;
+    const data = await this.highlightService.findAllPublic(targetOrgId);
+    return {
+      success: true,
+      message: 'Highlights retrieved successfully',
+      data,
+    };
+  }
+
   @ApiOperation({ summary: 'Get public highlight by key/slug (Website)' })
   @ApiResponse({ status: 200, type: Highlight })
   @Get(['public/highlights/:sectionKey', 'highlights/public/:sectionKey'])
