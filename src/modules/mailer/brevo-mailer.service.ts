@@ -281,4 +281,64 @@ export class BrevoMailerService implements IMailerService {
       tags: ['customer-confirmation'],
     });
   }
+
+  async sendOrderConfirmationEmail(params: {
+    recipientEmail: string;
+    recipientName: string;
+    orderNumber: string;
+    totalAmount: number;
+    itemsCount: number;
+  }): Promise<EmailResult> {
+    if (!params.recipientEmail) {
+      return { success: false, error: 'No recipient email provided' };
+    }
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: #1B4D3E; padding: 24px; color: #ffffff; text-align: center;">
+          <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Rope4 Gear Store</h1>
+          <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Order Confirmation • #${params.orderNumber}</p>
+        </div>
+        <div style="padding: 28px;">
+          <p style="font-size: 16px; color: #0f172a; margin-top: 0;">
+            Hello ${params.recipientName || 'Traveler'},
+          </p>
+          <p style="font-size: 15px; color: #334155; line-height: 1.6;">
+            Thank you for shopping at the Rope4 Gear Store! We have received your order and are currently preparing it for shipment.
+          </p>
+          <div style="margin: 20px 0; padding: 18px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <table style="width: 100%; font-size: 14px; color: #334155;">
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Order Number:</td>
+                <td style="padding: 6px 0; font-weight: 600; text-align: right; color: #1B4D3E;">${params.orderNumber}</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Total Items:</td>
+                <td style="padding: 6px 0; font-weight: 600; text-align: right;">${params.itemsCount} item(s)</td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; color: #64748b;">Total Amount:</td>
+                <td style="padding: 6px 0; font-weight: 700; text-align: right; font-size: 16px; color: #0f172a;">${params.totalAmount.toLocaleString()} BDT</td>
+              </tr>
+            </table>
+          </div>
+          <p style="font-size: 14px; color: #64748b; line-height: 1.5;">
+            Our logistics team will verify your address and send tracking details once your package is dispatched with our courier partner.
+          </p>
+          <p style="font-size: 14px; color: #0f172a; margin-bottom: 0;">
+            Happy Adventures,<br />
+            <strong>Rope4 Outdoor Gear Team</strong><br />
+            <a href="https://rope4.org" style="color: #1B4D3E; text-decoration: none;">rope4.org</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    return this.sendEmail({
+      to: { email: params.recipientEmail, name: params.recipientName },
+      subject: `Order Confirmed: ${params.orderNumber} - Rope4 Gear Store`,
+      html,
+      tags: ['order-confirmation', params.orderNumber],
+    });
+  }
 }

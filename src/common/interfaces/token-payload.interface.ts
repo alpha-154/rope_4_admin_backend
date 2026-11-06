@@ -2,6 +2,7 @@ export enum UserRole {
   SUPER_ADMIN = 'superAdmin',
   ADMIN = 'admin',
   EDITOR = 'editor',
+  CUSTOMER = 'customer',
 }
 
 export interface TokenPayload {
