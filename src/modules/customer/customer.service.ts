@@ -61,7 +61,7 @@ export class CustomerService {
     return this.jwtService.sign(payload, {
       secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
       expiresIn: (this.configService.get<string>(
-        'JWT_ACCESS_TOKEN_EXPIRATION',
+        'JWT_CUSTOMER_TOKEN_EXPIRATION',
       ) || '7d') as any,
     });
   }

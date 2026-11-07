@@ -22,7 +22,7 @@ if (fs.existsSync(envPath)) {
 const mongoUri =
   process.argv[2] ||
   process.env.MONGODB_URI ||
-  'mongodb+srv://mrhrakib07_db_user:qBcOAhwylg341Mrt@cluster0.3dv8wky.mongodb.net/rope4?retryWrites=true&w=majority';
+  'mongodb://localhost:27017/rope4';
 
 async function seed() {
   console.log('🚀 Connecting to MongoDB Atlas for Rope4 Seeding...');

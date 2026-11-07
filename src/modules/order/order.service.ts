@@ -81,6 +81,7 @@ export class OrderService {
     const validatedProducts: Array<{
       inputItem: any;
       product: ProductDocument;
+      matchedVariant?: any;
     }> = [];
 
     for (const item of dto.items) {
@@ -103,13 +104,38 @@ export class OrderService {
         );
       }
 
+      // Check variant stock and pricing if variant was specified
+      let matchedVariant: any = null;
+      if (item.variant && (item.variant.size || item.variant.color)) {
+        matchedVariant = (product.variants || []).find((v: any) => {
+          const matchSize =
+            !item.variant?.size ||
+            v.size?.toLowerCase() === item.variant.size?.toLowerCase();
+          const matchColor =
+            !item.variant?.color ||
+            v.color?.toLowerCase() === item.variant.color?.toLowerCase();
+          return matchSize && matchColor;
+        });
+
+        if (
+          matchedVariant &&
+          typeof matchedVariant.stockQuantity === 'number'
+        ) {
+          if (matchedVariant.stockQuantity < item.quantity) {
+            throw new BadRequestException(
+              `Selected variant for "${product.title}" (${[item.variant.size, item.variant.color].filter(Boolean).join(' ')}) is out of stock. (Available: ${matchedVariant.stockQuantity})`,
+            );
+          }
+        }
+      }
+
       if (product.stockQuantity < item.quantity) {
         throw new BadRequestException(
           `Product "${product.title}" is out of stock or does not have sufficient quantity available. (Requested: ${item.quantity}, Available: ${product.stockQuantity})`,
         );
       }
 
-      validatedProducts.push({ inputItem: item, product });
+      validatedProducts.push({ inputItem: item, product, matchedVariant });
     }
 
     // Step 2: Atomic Decrement Loop with Rollback
@@ -118,35 +144,54 @@ export class OrderService {
       quantity: number;
       before: number;
       after: number;
+      variantSku?: string;
     }> = [];
 
-    for (const { inputItem, product } of validatedProducts) {
+    for (const { inputItem, product, matchedVariant } of validatedProducts) {
       const quantityToDeduct = Number(inputItem.quantity);
       const beforeStock = product.stockQuantity;
 
-      // Atomic decrement condition: stockQuantity must still be >= quantity
+      const filterQuery: any = {
+        _id: product._id,
+        organizationId: orgObjId,
+        isPublished: true,
+        isDeleted: false,
+        stockQuantity: { $gte: quantityToDeduct },
+      };
+      const updateQuery: any = {
+        $inc: { stockQuantity: -quantityToDeduct },
+      };
+
+      if (matchedVariant?.sku) {
+        filterQuery['variants.sku'] = matchedVariant.sku;
+        filterQuery['variants.stockQuantity'] = { $gte: quantityToDeduct };
+        updateQuery.$inc['variants.$.stockQuantity'] = -quantityToDeduct;
+      }
+
+      // Atomic decrement condition
       const updatedProduct = await this.productModel
-        .findOneAndUpdate(
-          {
-            _id: product._id,
-            organizationId: orgObjId,
-            isPublished: true,
-            isDeleted: false,
-            stockQuantity: { $gte: quantityToDeduct },
-          },
-          { $inc: { stockQuantity: -quantityToDeduct } },
-          { new: true },
-        )
+        .findOneAndUpdate(filterQuery, updateQuery, { new: true })
         .exec();
 
       if (!updatedProduct) {
-        // Concurrency collision: another customer ordered the remaining units
-        // Roll back any items decremented so far in this order batch
+        // Concurrency collision: roll back any items decremented so far in this batch
         for (const done of decrementedList) {
-          await this.productModel.updateOne(
-            { _id: done.product._id },
-            { $inc: { stockQuantity: done.quantity } },
-          );
+          if (done.variantSku) {
+            await this.productModel.updateOne(
+              { _id: done.product._id, 'variants.sku': done.variantSku },
+              {
+                $inc: {
+                  stockQuantity: done.quantity,
+                  'variants.$.stockQuantity': done.quantity,
+                },
+              },
+            );
+          } else {
+            await this.productModel.updateOne(
+              { _id: done.product._id },
+              { $inc: { stockQuantity: done.quantity } },
+            );
+          }
         }
 
         throw new BadRequestException(
@@ -159,6 +204,7 @@ export class OrderService {
         quantity: quantityToDeduct,
         before: beforeStock,
         after: updatedProduct.stockQuantity,
+        variantSku: matchedVariant?.sku,
       });
     }
 
@@ -167,17 +213,22 @@ export class OrderService {
     let subtotal = 0;
     const orderItems: OrderItem[] = [];
 
-    for (const { inputItem, product } of validatedProducts) {
-      const itemSubtotal = product.price * inputItem.quantity;
+    for (const { inputItem, product, matchedVariant } of validatedProducts) {
+      const effectivePrice =
+        matchedVariant?.price && matchedVariant.price > 0
+          ? matchedVariant.price
+          : product.price;
+      const effectiveSku = matchedVariant?.sku || product.sku;
+      const itemSubtotal = effectivePrice * inputItem.quantity;
       subtotal += itemSubtotal;
 
       orderItems.push({
         productId: product._id as mongoose.Types.ObjectId,
         productTitle: product.title,
-        sku: product.sku,
+        sku: effectiveSku,
         variant: inputItem.variant || null,
         quantity: inputItem.quantity,
-        unitPrice: product.price,
+        unitPrice: effectivePrice,
         subtotal: itemSubtotal,
         image: product.images?.[0] || undefined,
       });

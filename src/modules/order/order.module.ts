@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   Customer,
@@ -25,6 +26,7 @@ import { OrderService } from './order.service';
     InventoryModule,
     OrganizationModule,
     MailerModule,
+    JwtModule,
   ],
   controllers: [OrderController],
   providers: [OrderService],

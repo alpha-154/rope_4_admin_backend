@@ -364,7 +364,7 @@ export class FormService {
   ): Promise<FormSubmissionDocument> {
     const form = await this.findDefinitionBySlug(slug, meta.organizationId);
 
-    // Validate required fields based on form definition
+    // Validate required fields and field types based on form definition
     const submittedData = dto.data || {};
     const sanitizedData: Record<string, any> = {};
 
@@ -381,6 +381,24 @@ export class FormService {
         }
       }
 
+      // Validate field types if value is provided
+      if (val !== undefined && val !== null && val !== '') {
+        if (field.type === FormFieldType.EMAIL) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (typeof val !== 'string' || !emailRegex.test(val.trim())) {
+            throw new BadRequestException(
+              `Field "${field.label}" must be a valid email address`,
+            );
+          }
+        } else if (field.type === FormFieldType.NUMBER) {
+          if (isNaN(Number(val))) {
+            throw new BadRequestException(
+              `Field "${field.label}" must be a valid number`,
+            );
+          }
+        }
+      }
+
       // XSS sanitize string inputs
       if (typeof val === 'string') {
         sanitizedData[field.name] = sanitizeHtml(val.trim());
@@ -389,10 +407,12 @@ export class FormService {
       }
     }
 
-    // Capture any extra fields safely
+    // Capture any extra fields safely with sanitized keys and values
     for (const [key, val] of Object.entries(submittedData)) {
-      if (sanitizedData[key] === undefined) {
-        sanitizedData[key] =
+      const safeKey = key.replace(/[^\w\s-]/g, '').trim();
+      if (!safeKey) continue;
+      if (sanitizedData[safeKey] === undefined) {
+        sanitizedData[safeKey] =
           typeof val === 'string' ? sanitizeHtml(val.trim()) : val;
       }
     }
