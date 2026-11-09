@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrganizationModule } from '../organization/organization.module';
 import {
@@ -14,6 +15,7 @@ import { SiteSettingsService } from './site-settings.service';
       { name: SiteSettings.name, schema: SiteSettingsSchema },
     ]),
     OrganizationModule,
+    JwtModule,
   ],
   controllers: [SiteSettingsController],
   providers: [SiteSettingsService],

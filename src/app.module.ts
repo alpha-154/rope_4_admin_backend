@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { configuration } from './config';
 import { AuthModule } from './modules/auth/auth.module';
@@ -36,6 +37,9 @@ import { UserModule } from './modules/user/user.module';
         limit: 100,
       },
     ]),
+    JwtModule.register({
+      global: true,
+    }),
     DatabaseModule,
     HealthModule,
     OrganizationModule,

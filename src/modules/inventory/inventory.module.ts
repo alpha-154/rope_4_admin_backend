@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   Product,
@@ -17,6 +18,7 @@ import { InventoryService } from './inventory.service';
       { name: StockMovement.name, schema: StockMovementSchema },
       { name: Product.name, schema: ProductSchema },
     ]),
+    JwtModule,
   ],
   controllers: [InventoryController],
   providers: [InventoryService],
