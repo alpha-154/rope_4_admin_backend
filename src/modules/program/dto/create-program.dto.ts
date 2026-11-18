@@ -4,6 +4,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -31,10 +32,23 @@ export class CreateProgramDto {
   @IsString()
   slug?: string;
 
-  @ApiProperty({ example: 'Trek' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({
+    example: '665f1c2e8a1b2c3d4e5f6a7b',
+    description:
+      'Category id (preferred). Either categoryId or category is required.',
+  })
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Trek',
+    description:
+      'Category name (legacy). Matched case-insensitively or created when categoryId is not sent.',
+  })
+  @IsOptional()
   @IsString()
-  category: string;
+  category?: string;
 
   @ApiProperty({ example: 'India' })
   @IsNotEmpty()

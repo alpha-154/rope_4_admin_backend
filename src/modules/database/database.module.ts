@@ -21,6 +21,7 @@ const logger = new Logger('Database');
         const connection = mongoose.createConnection(uri, {
           serverSelectionTimeoutMS: 10000,
           autoIndex: true,
+          family: 4,
         });
 
         connection.on('connected', () => {
@@ -31,8 +32,19 @@ const logger = new Logger('Database');
           logger.warn('MongoDB connection lost / disconnected');
         });
 
-        connection.on('error', (err) => {
-          logger.error(`MongoDB connection error: ${err.message}`);
+        connection.on('error', (err: any) => {
+          const errMsg = err?.message || String(err);
+          logger.error(`MongoDB connection error: ${errMsg}`);
+
+          if (
+            errMsg.includes('alert number 80') ||
+            errMsg.includes('tlsv1 alert internal error') ||
+            errMsg.includes('ECONNREFUSED')
+          ) {
+            logger.warn(
+              '⚠️  Atlas TLS/Connection Rejection: Your current IP address is not whitelisted on MongoDB Atlas. Please go to MongoDB Atlas -> Security -> Network Access -> Add IP Address (or allow 0.0.0.0/0).',
+            );
+          }
         });
 
         return connection;

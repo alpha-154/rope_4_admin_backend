@@ -79,7 +79,7 @@ export class HighlightController {
   @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   @UseGuards(AuthGuard)
   @ApiOperation({
-    summary: 'Get single highlight section by ID or slug (Admin)',
+    summary: 'Get single highlight section by ID (Admin)',
   })
   @ApiResponse({ status: 200, type: Highlight })
   @Get('highlights/admin/:id')
@@ -134,22 +134,18 @@ export class HighlightController {
 
   // --- PUBLIC ENDPOINTS (CONSUMED BY WEBSITE) ---
 
-  @ApiOperation({ summary: 'Get public highlight by key/slug (Website)' })
-  @ApiResponse({ status: 200, type: Highlight })
-  @Get(['public/highlights/:sectionKey', 'highlights/public/:sectionKey'])
-  async getPublicHighlight(
-    @Param('sectionKey') sectionKey: string,
-    @GetOrgId() orgId?: string,
+  @ApiOperation({ summary: 'Get all public highlights (Website)' })
+  @ApiResponse({ status: 200, type: [Highlight] })
+  @Get(['public/highlights', 'highlights/public'])
+  async getAllPublicHighlights(
+    @GetOrgId({ required: false }) orgId?: string,
     @Query('organizationId') queryOrgId?: string,
-  ): Promise<IApiResponse<Highlight>> {
+  ): Promise<IApiResponse<Highlight[]>> {
     const targetOrgId = orgId || queryOrgId;
-    const data = await this.highlightService.findPublic(
-      sectionKey,
-      targetOrgId,
-    );
+    const data = await this.highlightService.findAllPublic(targetOrgId);
     return {
       success: true,
-      message: 'Highlight retrieved successfully',
+      message: 'Highlights retrieved successfully',
       data,
     };
   }

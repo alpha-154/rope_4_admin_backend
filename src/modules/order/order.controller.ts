@@ -18,6 +18,7 @@ import { Authorization } from '@/common/decorators/authorization.decorator';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { GetOrgId } from '@/common/decorators/get-organizationId.decorator';
 import { AuthGuard } from '@/common/guards/auth.guard';
+import { OptionalAuthGuard } from '@/common/guards/optional-auth.guard';
 import { IApiResponse } from '@/common/interfaces/api-response.interface';
 import {
   TokenPayload,
@@ -45,6 +46,7 @@ export class OrderController {
       'Checkout and place order with atomic stock decrement (Guest or Customer)',
   })
   @ApiResponse({ status: 201, description: 'Order placed successfully' })
+  @UseGuards(OptionalAuthGuard)
   @Post(['public/orders', 'public/checkout'])
   async checkout(
     @Body() dto: CreateOrderDto,

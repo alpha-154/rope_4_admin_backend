@@ -56,6 +56,20 @@ export class Faq {
   @IsNotEmpty()
   category: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    description:
+      'FAQ category reference (source of truth); `category` is the denormalized name',
+  })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'FaqCategory',
+    index: true,
+  })
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
+
   @ApiProperty({
     example: 'beginners-guide',
     description: 'URL-friendly slug for the FAQ group',

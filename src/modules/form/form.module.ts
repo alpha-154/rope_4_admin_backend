@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { OrganizationModule } from '../organization/organization.module';
 import {
@@ -19,6 +20,7 @@ import { FormService } from './form.service';
       { name: FormSubmission.name, schema: FormSubmissionSchema },
     ]),
     OrganizationModule,
+    JwtModule,
   ],
   controllers: [FormController],
   providers: [FormService],

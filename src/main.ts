@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as cookieParser from 'cookie-parser';
-import express from 'express';
+import * as express from 'express';
 import helmet from 'helmet';
 import * as hpp from 'hpp';
 import * as path from 'path';
@@ -25,7 +25,13 @@ async function bootstrap() {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
-  app.use('/uploads', express.static(uploadDir));
+  const staticHandler =
+    typeof express.static === 'function'
+      ? express.static
+      : (express as any).default?.static;
+  if (staticHandler) {
+    app.use('/uploads', staticHandler(uploadDir));
+  }
 
   // Security middlewares
   app.use(

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { QueryBuilder } from '../../common/helpers/mongodb-query-builder.helper';
@@ -8,12 +12,14 @@ import { CreateFaqDto } from './dto/create-faq.dto';
 import { ReorderFaqDto } from './dto/reorder-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { Faq, FaqDocument } from './entities/faq.entity';
+import { FaqCategoryService } from './faq-category.service';
 
 @Injectable()
 export class FaqService {
   constructor(
     @InjectModel(Faq.name)
     private readonly faqModel: Model<FaqDocument>,
+    private readonly faqCategoryService: FaqCategoryService,
   ) {}
 
   async create(organizationId: string, createFaqDto: CreateFaqDto) {
@@ -33,13 +39,22 @@ export class FaqService {
       index = generateKeyBetween(null, null);
     }
 
+    const resolved = await this.faqCategoryService.resolve(
+      organizationId,
+      createFaqDto,
+    );
+    if (!resolved) {
+      throw new BadRequestException('An FAQ category is required');
+    }
+
     const baseSlug = this.slugify(
-      createFaqDto.slug || createFaqDto.category || 'faq',
+      createFaqDto.slug || resolved.category || 'faq',
     );
     const slug = await this.generateUniqueSlug(baseSlug, orgObjId);
 
     const created = await this.faqModel.create({
       ...createFaqDto,
+      ...resolved,
       index,
       slug,
       organizationId: orgObjId,
@@ -78,11 +93,17 @@ export class FaqService {
   }
 
   async findPublic(organizationId?: string) {
-    const filter: any = { isActive: true };
-    if (organizationId) {
+    // Only active groups that actually contain questions
+    const filter: any = { isActive: true, 'faqs.0': { $exists: true } };
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
       filter.organizationId = new Types.ObjectId(organizationId);
     }
-    return await this.faqModel.find(filter).sort({ index: 'asc' }).exec();
+    return await this.faqModel
+      .find(filter)
+      .select('category categoryId slug faqs index')
+      .sort({ index: 'asc' })
+      .lean()
+      .exec();
   }
 
   async update(id: string, organizationId: string, updateFaqDto: UpdateFaqDto) {
@@ -93,12 +114,17 @@ export class FaqService {
       search.slug = id;
     }
 
-    if (updateFaqDto.category && !updateFaqDto.slug) {
-      updateFaqDto.slug = this.slugify(updateFaqDto.category);
+    const setPayload: Record<string, unknown> = { ...updateFaqDto };
+    if (updateFaqDto.categoryId || updateFaqDto.category) {
+      const resolved = await this.faqCategoryService.resolve(
+        organizationId,
+        updateFaqDto,
+      );
+      if (resolved) Object.assign(setPayload, resolved);
     }
 
     const updated = await this.faqModel
-      .findOneAndUpdate(search, { $set: updateFaqDto }, { new: true })
+      .findOneAndUpdate(search, { $set: setPayload }, { new: true })
       .exec();
 
     if (!updated) {

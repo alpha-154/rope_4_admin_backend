@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
-  IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
@@ -11,31 +11,18 @@ import {
 import { HighlightItem } from '../entities/highlight.entity';
 
 export class CreateHighlightDto {
-  @ApiProperty({
-    example: 'why-choose-us',
-    description: 'Section identifier key',
-  })
-  @IsNotEmpty()
-  @IsString()
-  sectionKey: string;
-
-  @ApiProperty({ example: 'why-choose-us', description: 'Section slug' })
-  @IsNotEmpty()
-  @IsString()
-  slug: string;
-
-  @ApiPropertyOptional({ example: 'Why Choose Us' })
+  @ApiPropertyOptional({ example: 'Wilderness Safety & Instruction' })
   @IsOptional()
   @IsString()
   badge?: string;
 
-  @ApiPropertyOptional({ example: 'India and Global Mountain Experts' })
+  @ApiPropertyOptional({ example: 'Why Learn & Trek With Rope4?' })
   @IsOptional()
   @IsString()
   sectionTitle?: string;
 
   @ApiPropertyOptional({
-    example: 'Pioneers in high-altitude treks and wilderness survival.',
+    example: 'We operate under the strictest mountaineering safety guidelines.',
   })
   @IsOptional()
   @IsString()
@@ -43,9 +30,10 @@ export class CreateHighlightDto {
 
   @ApiProperty({
     type: [HighlightItem],
-    description: 'Items in this highlight section',
+    description: 'Highlight cards / stats',
   })
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => HighlightItem)
   items: HighlightItem[];

@@ -1,0 +1,2 @@
+# Gitignored files Claude copies into a new worktree of this repo
+.env

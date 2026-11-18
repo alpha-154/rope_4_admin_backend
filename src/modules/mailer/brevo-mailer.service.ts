@@ -167,6 +167,16 @@ export class BrevoMailerService implements IMailerService {
     }
   }
 
+  private escapeHtml(str: any): string {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   async sendFormSubmissionAlert(
     recipientEmails: string[],
     formName: string,
@@ -178,37 +188,45 @@ export class BrevoMailerService implements IMailerService {
     }
 
     const fieldRows = Object.entries(submissionData)
-      .map(
-        ([key, val]) => `
+      .map(([key, val]) => {
+        const safeKey = this.escapeHtml(key.replace(/([A-Z])/g, ' $1').trim());
+        const safeVal = this.escapeHtml(
+          typeof val === 'object' ? JSON.stringify(val) : String(val ?? ''),
+        );
+        return `
         <tr>
           <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #334155; text-transform: capitalize; width: 35%;">
-            ${key.replace(/([A-Z])/g, ' $1')}
+            ${safeKey}
           </td>
-          <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">
-            ${typeof val === 'object' ? JSON.stringify(val) : String(val ?? '')}
-          </td>
-        </tr>`,
-      )
+          <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #0f172a;">${safeVal}</td>
+        </tr>`;
+      })
       .join('');
+
+    const safeFormName = this.escapeHtml(formName);
+    const safeSubmitterName = this.escapeHtml(
+      submitterInfo.name || submitterInfo.email || 'A visitor',
+    );
+    const safeSubmitterIp = this.escapeHtml(submitterInfo.ip || '');
 
     const html = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #1B4D3E; padding: 24px; color: #ffffff; text-align: center;">
           <h1 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.5px;">Rope4 Platform Alert</h1>
-          <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">New Submission: ${formName}</p>
+          <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">New Submission: ${safeFormName}</p>
         </div>
         <div style="padding: 24px;">
           <p style="font-size: 15px; color: #1e293b; margin-top: 0;">
-            A new response was received from <strong>${submitterInfo.name || submitterInfo.email || 'A visitor'}</strong>.
+            A new response was received from <strong>${safeSubmitterName}</strong>.
           </p>
           <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; background: #f8fafc; border-radius: 6px; overflow: hidden; border: 1px solid #e2e8f0;">
             <tbody>
               ${fieldRows}
               ${
-                submitterInfo.ip
+                safeSubmitterIp
                   ? `<tr>
                       <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #64748b;">IP Address</td>
-                      <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${submitterInfo.ip}</td>
+                      <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${safeSubmitterIp}</td>
                     </tr>`
                   : ''
               }

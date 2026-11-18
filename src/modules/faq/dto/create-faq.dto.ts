@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsNotEmpty,
+  IsMongoId,
   IsOptional,
   IsString,
   ValidateNested,
@@ -11,10 +11,22 @@ import {
 import { FaqItem } from '../entities/faq.entity';
 
 export class CreateFaqDto {
-  @ApiProperty({ example: 'Beginners Guide', description: 'FAQ Category name' })
-  @IsNotEmpty()
+  @ApiPropertyOptional({
+    description:
+      'FAQ category id (preferred). Either categoryId or category is required.',
+  })
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
+
+  @ApiPropertyOptional({
+    example: 'Beginners Guide',
+    description:
+      'FAQ category name (legacy; matched or created when categoryId is absent)',
+  })
+  @IsOptional()
   @IsString()
-  category: string;
+  category?: string;
 
   @ApiPropertyOptional({
     example: 'beginners-guide',

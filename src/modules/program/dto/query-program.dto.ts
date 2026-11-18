@@ -1,8 +1,24 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsMongoId,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class QueryPublicProgramsDto {
+  @ApiPropertyOptional({ example: 'summer-camp', description: 'Category slug' })
+  @IsOptional()
+  @IsString()
+  categorySlug?: string;
+
+  @ApiPropertyOptional({ description: 'Category id' })
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
+
   @ApiPropertyOptional({ example: 'Trek' })
   @IsOptional()
   @IsString()

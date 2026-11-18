@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { configuration } from './config';
 import { AuthModule } from './modules/auth/auth.module';
+import { CategoryModule } from './modules/category/category.module';
 import { CustomerModule } from './modules/customer/customer.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { FormModule } from './modules/form/form.module';
@@ -36,8 +39,12 @@ import { UserModule } from './modules/user/user.module';
         limit: 100,
       },
     ]),
+    JwtModule.register({
+      global: true,
+    }),
     DatabaseModule,
     HealthModule,
+    DashboardModule,
     OrganizationModule,
     UserModule,
     AuthModule,
@@ -45,6 +52,7 @@ import { UserModule } from './modules/user/user.module';
     MailerModule,
     HighlightModule,
     FaqModule,
+    CategoryModule,
     ProgramModule,
     ReviewModule,
     NewsModule,

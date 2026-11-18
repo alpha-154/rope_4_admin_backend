@@ -45,7 +45,9 @@ export class UserService {
     }
 
     const saltRounds =
-      this.configService.get<number>(EnvironmentKey.BCRYPT_SALT_ROUNDS) || 10;
+      Number(
+        this.configService.get<number>(EnvironmentKey.BCRYPT_SALT_ROUNDS),
+      ) || 10;
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
 
     const user = new this.userModel({
@@ -182,7 +184,9 @@ export class UserService {
     }
 
     const saltRounds =
-      this.configService.get<number>(EnvironmentKey.BCRYPT_SALT_ROUNDS) || 10;
+      Number(
+        this.configService.get<number>(EnvironmentKey.BCRYPT_SALT_ROUNDS),
+      ) || 10;
     // Pre-hash with SHA-256 to ensure input to bcrypt is strictly 64 characters (below bcrypt's 72-byte truncation limit)
     const tokenHash = crypto
       .createHash('sha256')

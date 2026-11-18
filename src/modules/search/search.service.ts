@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { escapeRegex } from '../../common/utils/escape-regex.util';
@@ -99,14 +99,31 @@ export class SearchService {
       if (dto.near) {
         const parts = dto.near.split(',').map((p) => parseFloat(p.trim()));
         if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-          hasNear = true;
           const [lng, lat, maxDistance] = parts;
+          if (lng < -180 || lng > 180 || lat < -90 || lat > 90) {
+            throw new BadRequestException(
+              'Coordinates must be between -180..180 for longitude and -90..90 for latitude',
+            );
+          }
+          if (
+            maxDistance !== undefined &&
+            (isNaN(maxDistance) || maxDistance < 0)
+          ) {
+            throw new BadRequestException(
+              'maxDistance must be a positive number in meters',
+            );
+          }
+          hasNear = true;
           progFilter.location = {
             $near: {
               $geometry: { type: 'Point', coordinates: [lng, lat] },
               ...(maxDistance ? { $maxDistance: maxDistance } : {}),
             },
           };
+        } else {
+          throw new BadRequestException(
+            'near parameter must be in "longitude,latitude[,maxDistance]" format',
+          );
         }
       }
 

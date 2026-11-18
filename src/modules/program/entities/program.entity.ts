@@ -257,6 +257,16 @@ export class Program {
   @IsString()
   category: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    description:
+      'Category reference (source of truth). `category` holds the denormalized name.',
+  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Category', index: true })
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string;
+
   @ApiProperty({ example: 'India' })
   @Prop({ type: String, required: true, trim: true, index: true })
   @IsNotEmpty()
@@ -512,6 +522,12 @@ export const ProgramSchema = SchemaFactory.createForClass(Program);
 // Compound and geospatial indexes
 ProgramSchema.index({ organizationId: 1, slug: 1 }, { unique: true });
 ProgramSchema.index({ organizationId: 1, status: 1, isFeatured: 1 });
+ProgramSchema.index({
+  organizationId: 1,
+  categoryId: 1,
+  status: 1,
+  createdAt: -1,
+});
 ProgramSchema.index({ location: '2dsphere' });
 ProgramSchema.index({
   title: 'text',

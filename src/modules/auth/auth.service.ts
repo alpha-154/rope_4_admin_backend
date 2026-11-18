@@ -12,6 +12,7 @@ import {
   TokenPayload,
   UserRole,
 } from '@/common/interfaces/token-payload.interface';
+import { createSlug } from '@/common/utils/slugify.util';
 import { EnvironmentKey } from '@/config';
 import { OrganizationService } from '../organization/organization.service';
 import { UserService } from '../user/user.service';
@@ -57,23 +58,46 @@ export class AuthService {
       throw new ConflictException('Owner email is already registered');
     }
 
-    // 1. Create organization
-    const org = await this.orgService.create({
-      name: dto.organizationName,
-      slug: dto.slug,
-      contactEmail: dto.contactEmail,
-      contactPhone: dto.contactPhone,
-      address: dto.address,
-    });
+    // 1. Create organization (or reuse if already created in a failed attempt)
+    let org: any;
+    try {
+      org = await this.orgService.create({
+        name: dto.organizationName,
+        slug: dto.slug,
+        contactEmail: dto.contactEmail,
+        contactPhone: dto.contactPhone,
+        address: dto.address,
+      });
+    } catch (err) {
+      if (err instanceof ConflictException) {
+        const slug = dto.slug
+          ? createSlug(dto.slug)
+          : createSlug(dto.organizationName);
+        const existingOrg = await this.orgService
+          .findBySlug(slug)
+          .catch(() => null);
+        if (existingOrg) {
+          org = existingOrg;
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     // 2. Create owner user as SUPER_ADMIN
-    const user = await this.userService.create(org._id.toString(), {
-      email: dto.owner.email,
-      password: dto.owner.password,
-      firstName: dto.owner.firstName,
-      lastName: dto.owner.lastName,
-      role: UserRole.SUPER_ADMIN,
-    });
+    const user = await this.userService.create(
+      org._id.toString(),
+      {
+        email: dto.owner.email,
+        password: dto.owner.password,
+        firstName: dto.owner.firstName,
+        lastName: dto.owner.lastName,
+        role: UserRole.SUPER_ADMIN,
+      },
+      UserRole.SUPER_ADMIN,
+    );
 
     const tokenPayload: TokenPayload = {
       userId: user._id.toString(),
