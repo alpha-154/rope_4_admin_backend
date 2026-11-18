@@ -1,20 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import {
-  IsBoolean,
-  IsEnum,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
-import { ReviewSource } from '../entities/review.entity';
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class QueryPublicReviewsDto {
-  @ApiPropertyOptional({ enum: ReviewSource })
-  @IsOptional()
-  @IsEnum(ReviewSource)
-  source?: ReviewSource;
-
   @ApiPropertyOptional({ example: '659fa4219...' })
   @IsOptional()
   @IsString()

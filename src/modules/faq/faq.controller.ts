@@ -26,12 +26,73 @@ import { CreateFaqDto } from './dto/create-faq.dto';
 import { ReorderFaqDto } from './dto/reorder-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { Faq } from './entities/faq.entity';
+import { FaqCategoryService } from './faq-category.service';
 import { FaqService } from './faq.service';
+import {
+  CreateFaqCategoryDto,
+  UpdateFaqCategoryDto,
+} from './dto/faq-category.dto';
 
 @ApiTags('FAQs')
 @Controller()
 export class FaqController {
-  constructor(private readonly faqService: FaqService) {}
+  constructor(
+    private readonly faqService: FaqService,
+    private readonly faqCategoryService: FaqCategoryService,
+  ) {}
+
+  // --- FAQ CATEGORY NAMES (ADMIN) ---
+
+  @ApiBearerAuth()
+  @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'List FAQ category names with usage count (Admin)' })
+  @Get('faq-categories/admin')
+  async listCategories(@GetOrgId() orgId: string) {
+    const data = await this.faqCategoryService.findAll(orgId);
+    return { success: true, message: 'FAQ categories retrieved', data };
+  }
+
+  @ApiBearerAuth()
+  @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
+  @UseGuards(AuthGuard)
+  @ApiOperation({ summary: 'Create FAQ category name (Admin)' })
+  @Post('faq-categories')
+  async createCategory(
+    @GetOrgId() orgId: string,
+    @Body() dto: CreateFaqCategoryDto,
+  ) {
+    const data = await this.faqCategoryService.create(orgId, dto);
+    return { success: true, message: 'FAQ category created', data };
+  }
+
+  @ApiBearerAuth()
+  @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
+  @UseGuards(AuthGuard)
+  @ApiOperation({
+    summary: 'Rename FAQ category; linked FAQ groups are updated (Admin)',
+  })
+  @Patch('faq-categories/:id')
+  async updateCategory(
+    @GetOrgId() orgId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateFaqCategoryDto,
+  ) {
+    const data = await this.faqCategoryService.update(orgId, id, dto);
+    return { success: true, message: 'FAQ category renamed', data };
+  }
+
+  @ApiBearerAuth()
+  @Authorization(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @UseGuards(AuthGuard)
+  @ApiOperation({
+    summary: 'Delete FAQ category (409 while FAQ groups use it) (Admin)',
+  })
+  @Delete('faq-categories/:id')
+  async deleteCategory(@GetOrgId() orgId: string, @Param('id') id: string) {
+    const data = await this.faqCategoryService.remove(orgId, id);
+    return { success: true, message: 'FAQ category deleted', data };
+  }
 
   // --- ADMIN ENDPOINTS ---
 
@@ -166,7 +227,7 @@ export class FaqController {
   @ApiResponse({ status: 200, type: [Faq] })
   @Get(['public/faqs', 'faqs/public'])
   async getPublicFaqs(
-    @GetOrgId() orgId?: string,
+    @GetOrgId({ required: false }) orgId?: string,
     @Query('organizationId') queryOrgId?: string,
   ): Promise<IApiResponse<Faq[]>> {
     const targetOrgId = orgId || queryOrgId;

@@ -9,9 +9,10 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
-import { ReviewSource, ReviewStatus } from '../entities/review.entity';
+import { ReviewStatus } from '../entities/review.entity';
 
 export class CreateReviewDto {
   @ApiProperty({ example: 'Tahsin Ahmed' })
@@ -43,10 +44,11 @@ export class CreateReviewDto {
   @IsString()
   text: string;
 
-  @ApiPropertyOptional({ enum: ReviewSource, default: ReviewSource.GOOGLE })
+  @ApiPropertyOptional({ example: 'Expedition Leader, Keokradong Batch 12' })
   @IsOptional()
-  @IsEnum(ReviewSource)
-  source?: ReviewSource;
+  @IsString()
+  @MaxLength(120)
+  designation?: string;
 
   @ApiPropertyOptional({ example: 'https://youtube.com/watch?v=xyz' })
   @IsOptional()

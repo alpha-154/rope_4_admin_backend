@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnApplicationBootstrap,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { QueryBuilder } from '../../common/helpers/mongodb-query-builder.helper';
@@ -9,11 +14,37 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { Review, ReviewDocument, ReviewStatus } from './entities/review.entity';
 
 @Injectable()
-export class ReviewService {
+export class ReviewService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(ReviewService.name);
+
   constructor(
     @InjectModel(Review.name)
     private readonly reviewModel: Model<ReviewDocument>,
   ) {}
+
+  /** Idempotent cleanup after `source` was replaced by `designation`. */
+  async onApplicationBootstrap() {
+    const collection = this.reviewModel.collection;
+    try {
+      await collection.dropIndex('organizationId_1_status_1_source_1');
+      this.logger.log('Dropped legacy review source index');
+    } catch {
+      // already dropped
+    }
+    try {
+      const res = await collection.updateMany(
+        { source: { $exists: true } },
+        { $unset: { source: '' } },
+      );
+      if (res.modifiedCount > 0) {
+        this.logger.log(
+          `Removed legacy source from ${res.modifiedCount} review(s)`,
+        );
+      }
+    } catch (err) {
+      this.logger.error('Review source cleanup failed', err as Error);
+    }
+  }
 
   async create(
     organizationId: string,
@@ -31,7 +62,7 @@ export class ReviewService {
 
   async findAll(organizationId: string, query: IQueryFeatures) {
     const queryBuilder = new QueryBuilder(this.reviewModel, query, {
-      searchFields: ['author', 'text', 'source', 'programTitle'] as any,
+      searchFields: ['author', 'text', 'designation', 'programTitle'] as any,
     });
 
     if (organizationId) {
@@ -112,10 +143,6 @@ export class ReviewService {
 
     if (organizationId && Types.ObjectId.isValid(organizationId)) {
       filter.organizationId = new Types.ObjectId(organizationId);
-    }
-
-    if (queryDto.source) {
-      filter.source = queryDto.source;
     }
 
     if (queryDto.programId && Types.ObjectId.isValid(queryDto.programId)) {

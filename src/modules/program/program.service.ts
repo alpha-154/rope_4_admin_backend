@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { QueryBuilder } from '../../common/helpers/mongodb-query-builder.helper';
 import { IQueryFeatures } from '../../common/interfaces/query-feature.interface';
 import { escapeRegex } from '../../common/utils/escape-regex.util';
 import { sanitizeHtml } from '../../common/utils/sanitize-html.util';
+import { CategoryService } from '../category/category.service';
 import { CreateProgramDto } from './dto/create-program.dto';
 import { QueryPublicProgramsDto } from './dto/query-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
@@ -19,6 +24,7 @@ export class ProgramService {
   constructor(
     @InjectModel(Program.name)
     private readonly programModel: Model<ProgramDocument>,
+    private readonly categoryService: CategoryService,
   ) {}
 
   async create(
@@ -29,8 +35,17 @@ export class ProgramService {
     const baseSlug = createDto.slug || this.slugify(createDto.title);
     const slug = await this.generateUniqueSlug(baseSlug, orgObjId);
 
+    const resolvedCategory = await this.categoryService.resolveForProgram(
+      organizationId,
+      createDto,
+    );
+    if (!resolvedCategory) {
+      throw new BadRequestException('A program category is required');
+    }
+
     const payload = {
       ...createDto,
+      ...resolvedCategory,
       description: createDto.description
         ? sanitizeHtml(createDto.description)
         : createDto.description,
@@ -82,6 +97,17 @@ export class ProgramService {
       });
     }
 
+    // ?categoryId=<id> arrives as a string; the field is an ObjectId
+    const categoryId = query.filters?.categoryId;
+    if (categoryId) {
+      delete query.filters!.categoryId;
+      if (Types.ObjectId.isValid(String(categoryId))) {
+        queryBuilder.addFilterQuery({
+          categoryId: new Types.ObjectId(String(categoryId)),
+        } as FilterQuery<ProgramDocument>);
+      }
+    }
+
     return await queryBuilder.execute();
   }
 
@@ -128,8 +154,17 @@ export class ProgramService {
       }));
     }
 
+    const setPayload: Record<string, unknown> = { ...updateDto };
+    if (updateDto.categoryId || updateDto.category) {
+      const resolved = await this.categoryService.resolveForProgram(
+        organizationId,
+        updateDto,
+      );
+      if (resolved) Object.assign(setPayload, resolved);
+    }
+
     const updated = await this.programModel
-      .findOneAndUpdate(search, { $set: updateDto }, { new: true })
+      .findOneAndUpdate(search, { $set: setPayload }, { new: true })
       .exec();
 
     if (!updated) {
@@ -172,7 +207,16 @@ export class ProgramService {
       filter.organizationId = new Types.ObjectId(organizationId);
     }
 
-    if (queryDto.category) {
+    if (queryDto.categoryId) {
+      filter.categoryId = new Types.ObjectId(queryDto.categoryId);
+    } else if (queryDto.categorySlug) {
+      const categoryId = await this.categoryService.findIdBySlug(
+        queryDto.categorySlug,
+        organizationId,
+      );
+      // Unknown slug: match nothing rather than everything
+      filter.categoryId = categoryId ?? new Types.ObjectId();
+    } else if (queryDto.category) {
       filter.category = {
         $regex: new RegExp(`^${escapeRegex(queryDto.category)}$`, 'i'),
       };

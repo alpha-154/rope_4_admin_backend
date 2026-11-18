@@ -1217,7 +1217,7 @@ async function seed() {
       rating: 5,
       date: new Date('2026-09-12'),
       text: 'Completed the Everest Base Camp trek with Rope4. Their safety protocols, oxygen checks, and acclimatization strategy made all the difference. Our Sherpa team felt like family.',
-      source: 'google',
+      designation: 'EBC Expedition Member',
       isFeatured: true,
       status: 'approved',
       programTitle: 'Everest Base Camp & Kala Patthar High-Altitude Trek',
@@ -1230,7 +1230,7 @@ async function seed() {
       rating: 5,
       date: new Date('2026-08-20'),
       text: 'As a physician, I was deeply impressed by the medical competence of the expedition guides. Proper hydration pacing and pulse oximeter readings every morning and evening. Highly recommend!',
-      source: 'google',
+      designation: 'Physician, Annapurna Circuit Batch',
       isFeatured: true,
       status: 'approved',
       programTitle: 'Annapurna Circuit & Thorong La Pass Expedition',
@@ -1243,7 +1243,7 @@ async function seed() {
       rating: 5,
       date: new Date('2026-10-04'),
       text: 'Our family trek to Keokradong was seamlessly organized. The kids loved the campfire storytelling and our guide was patient and knowledgeable about local flora and traditions.',
-      source: 'ambassador',
+      designation: 'Parent, Family Trek',
       isFeatured: true,
       status: 'approved',
       programTitle: 'Keokradong & Nafakhum Wilderness Expedition',
@@ -1256,7 +1256,7 @@ async function seed() {
       rating: 5,
       date: new Date('2026-07-15'),
       text: 'The Basic Mountaineering Course transformed how I perceive high angles. Solid knots, reliable anchor building, and safe rappelling. Rope4 is setting the benchmark for outdoor education in BD.',
-      source: 'video',
+      designation: 'Basic Mountaineering Graduate',
       videoUrl: 'https://youtube.com/watch?v=dQw4w9WgXcQ',
       isFeatured: true,
       status: 'approved',
@@ -1270,7 +1270,7 @@ async function seed() {
       rating: 4,
       date: new Date('2026-09-30'),
       text: 'Purchased an Osprey Atmos 65L pack and trekking poles. Fast courier delivery inside Dhaka within 24 hours, completely authentic mountain gear.',
-      source: 'google',
+      designation: 'Gear Store Customer',
       isFeatured: false,
       status: 'approved',
       organizationId: orgId,
@@ -1300,7 +1300,7 @@ async function seed() {
       index: 'a0',
       isActive: true,
       organizationId: orgId,
-      items: [
+      faqs: [
         {
           question:
             'What physical fitness level is required for high-altitude treks (above 4,000m)?',
@@ -1322,7 +1322,7 @@ async function seed() {
       index: 'a1',
       isActive: true,
       organizationId: orgId,
-      items: [
+      faqs: [
         {
           question:
             'What equipment does Rope4 provide vs what do I need to bring?',
@@ -1344,7 +1344,7 @@ async function seed() {
       index: 'a2',
       isActive: true,
       organizationId: orgId,
-      items: [
+      faqs: [
         {
           question: 'What happens in case of a medical emergency on trail?',
           answer:
@@ -1364,7 +1364,7 @@ async function seed() {
       index: 'a3',
       isActive: true,
       organizationId: orgId,
-      items: [
+      faqs: [
         {
           question: 'What is the deposit requirement and cancellation policy?',
           answer:

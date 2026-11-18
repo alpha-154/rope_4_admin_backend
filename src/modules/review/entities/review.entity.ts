@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
 } from 'class-validator';
 import mongoose, { Document } from 'mongoose';
@@ -16,14 +17,6 @@ import { Organization } from '../../organization/entities/organization.entity';
 import { Program } from '../../program/entities/program.entity';
 
 export type ReviewDocument = Review & Document;
-
-export enum ReviewSource {
-  GOOGLE = 'google',
-  VIDEO = 'video',
-  AWARD = 'award',
-  TRUSTED_BY = 'trusted-by',
-  AMBASSADOR = 'ambassador',
-}
 
 export enum ReviewStatus {
   PENDING = 'pending',
@@ -80,15 +73,15 @@ export class Review {
   @IsString()
   text: string;
 
-  @ApiProperty({ enum: ReviewSource, default: ReviewSource.GOOGLE })
-  @Prop({
-    type: String,
-    enum: ReviewSource,
-    default: ReviewSource.GOOGLE,
-    index: true,
+  @ApiPropertyOptional({
+    example: 'Expedition Leader, Keokradong Batch 12',
+    description: 'Author designation / role shown under the name',
   })
-  @IsEnum(ReviewSource)
-  source: ReviewSource;
+  @Prop({ type: String, default: '', trim: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  designation?: string;
 
   @ApiPropertyOptional({ example: 'https://youtube.com/watch?v=xyz' })
   @Prop({ type: String, default: '' })
@@ -138,5 +131,4 @@ export class Review {
 
 export const ReviewSchema = SchemaFactory.createForClass(Review);
 
-ReviewSchema.index({ organizationId: 1, status: 1, source: 1 });
 ReviewSchema.index({ organizationId: 1, status: 1, isFeatured: 1 });

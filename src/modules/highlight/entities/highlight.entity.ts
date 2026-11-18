@@ -4,10 +4,13 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import mongoose, { Document } from 'mongoose';
@@ -15,47 +18,67 @@ import { Organization } from '../../organization/entities/organization.entity';
 
 export type HighlightDocument = Highlight & Document;
 
+/** Sign/suffix rendered right after the numeric value, e.g. 16 + "+" = "16+". */
+export const HIGHLIGHT_VALUE_SIGNS = [
+  '',
+  '+',
+  '-',
+  '*',
+  '%',
+  'x',
+  'K',
+  'K+',
+  'M',
+  'M+',
+] as const;
+export type HighlightValueSign = (typeof HIGHLIGHT_VALUE_SIGNS)[number];
+
+@Schema({ _id: false })
 export class HighlightItem {
-  @ApiPropertyOptional({
-    example: 'award',
-    description: 'Lucide icon name or image URL',
-  })
-  @IsOptional()
-  @IsString()
-  icon?: string;
-
-  @ApiPropertyOptional({
-    example: '16+ Years',
-    description: 'Stat or numerical value',
-  })
-  @IsOptional()
-  @IsString()
-  value?: string;
-
-  @ApiProperty({
-    example: 'Experience in Adventure',
-    description: 'Main card label/title',
-  })
+  @ApiProperty({ example: 'Alpine Experience', description: 'Card title' })
+  @Prop({ type: String, required: true, trim: true })
   @IsNotEmpty()
   @IsString()
+  @MaxLength(120)
   label: string;
 
   @ApiPropertyOptional({
-    example: 'Leading high-altitude treks worldwide',
-    description: 'Secondary descriptive text',
+    example: 'Led by NIM certified chief instructors & Himalayan summitteers.',
+    description: 'Card description (multi-line)',
   })
+  @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
-  sublabel?: string;
+  @MaxLength(600)
+  description?: string;
+
+  @ApiPropertyOptional({ example: 16, description: 'Numeric stat value' })
+  @Prop({ type: Number, default: null })
+  @IsOptional()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  value?: number | null;
 
   @ApiPropertyOptional({
-    example: '<p>Detailed description</p>',
-    description: 'Rich text content',
+    enum: HIGHLIGHT_VALUE_SIGNS,
+    example: '+',
+    description: 'Sign/suffix shown after the value',
   })
+  @Prop({ type: String, enum: HIGHLIGHT_VALUE_SIGNS, default: '' })
+  @IsOptional()
+  @IsIn(HIGHLIGHT_VALUE_SIGNS as unknown as string[])
+  valueSign?: HighlightValueSign;
+
+  @ApiPropertyOptional({
+    example: 'trophy',
+    description: 'Icon name (see admin icon picker)',
+  })
+  @Prop({ type: String, default: '' })
   @IsOptional()
   @IsString()
-  richText?: string;
+  @MaxLength(40)
+  icon?: string;
 }
+export const HighlightItemSchema = SchemaFactory.createForClass(HighlightItem);
 
 @Schema({
   timestamps: true,
@@ -75,24 +98,9 @@ export class Highlight {
   @IsMongoId()
   organizationId: string;
 
-  @ApiProperty({ example: 'why-choose-us', description: 'Section identifier' })
-  @Prop({ type: String, required: true, trim: true })
-  @IsNotEmpty()
-  @IsString()
-  sectionKey: string;
-
-  @ApiProperty({
-    example: 'why-choose-us',
-    description: 'Unique slug for URL lookup',
-  })
-  @Prop({ type: String, required: true, trim: true })
-  @IsNotEmpty()
-  @IsString()
-  slug: string;
-
   @ApiPropertyOptional({
-    example: 'Why Choose Us',
-    description: 'Tagline or badge',
+    example: 'Wilderness Safety & Instruction',
+    description: 'Badge / tagline above the title',
   })
   @Prop({ type: String, default: '' })
   @IsOptional()
@@ -100,7 +108,7 @@ export class Highlight {
   badge?: string;
 
   @ApiPropertyOptional({
-    example: 'India and Global Mountain Experts',
+    example: 'Why Learn & Trek With Rope4?',
     description: 'Section main title',
   })
   @Prop({ type: String, default: '' })
@@ -109,7 +117,7 @@ export class Highlight {
   sectionTitle?: string;
 
   @ApiPropertyOptional({
-    example: 'Pioneers in high-altitude treks and wilderness survival.',
+    example: 'We operate under the strictest mountaineering safety guidelines.',
     description: 'Section description',
   })
   @Prop({ type: String, default: '' })
@@ -119,9 +127,9 @@ export class Highlight {
 
   @ApiProperty({
     type: [HighlightItem],
-    description: 'List of highlight items/cards',
+    description: 'Highlight cards / stats',
   })
-  @Prop({ type: [Object], default: [] })
+  @Prop({ type: [HighlightItemSchema], default: [] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => HighlightItem)
@@ -142,5 +150,4 @@ export class Highlight {
 
 export const HighlightSchema = SchemaFactory.createForClass(Highlight);
 
-HighlightSchema.index({ organizationId: 1, slug: 1 }, { unique: true });
-HighlightSchema.index({ organizationId: 1, sectionKey: 1 });
+HighlightSchema.index({ organizationId: 1, isActive: 1, isPublic: 1 });

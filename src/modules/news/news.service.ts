@@ -139,7 +139,7 @@ export class NewsService {
       status: NewsStatus.PUBLISHED,
     };
 
-    if (organizationId) {
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
       filter.organizationId = new Types.ObjectId(organizationId);
     }
 
@@ -194,7 +194,7 @@ export class NewsService {
       status: NewsStatus.PUBLISHED,
     };
 
-    if (organizationId) {
+    if (organizationId && Types.ObjectId.isValid(organizationId)) {
       filter.organizationId = new Types.ObjectId(organizationId);
     }
 
